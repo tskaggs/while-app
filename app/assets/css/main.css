@@ -2,173 +2,100 @@
 @import "@nuxt/ui";
 
 @theme static {
-  --font-sans: 'DM Sans', 'DM Sans Fallback', system-ui, sans-serif;
-  --font-serif: 'Instrument Serif', 'Instrument Serif Fallback', Georgia, serif;
+  --font-sans: 'Inter', 'Inter Fallback', system-ui, sans-serif;
 
-  --color-while-50: #F5F5FD;
-  --color-while-100: #EBEBFA;
-  --color-while-200: #D6D7F4;
-  --color-while-300: #B8BAEB;
-  --color-while-400: #9497E0;
-  --color-while-500: #6E70D4;
-  --color-while-600: #5A5CBF;
-  --color-while-700: #4A4BA3;
-  --color-while-800: #3D3E85;
-  --color-while-900: #333468;
-  --color-while-950: #1E1F3D;
+  --color-while-50: #F0F0FC;
+  --color-while-100: #E0E1F9;
+  --color-while-200: #C4C5F2;
+  --color-while-300: #A3A5EB;
+  --color-while-400: #8588E3;
+  --color-while-500: #7B7EE8;
+  --color-while-600: #6B6EE0;
+  --color-while-700: #5A5DD4;
+  --color-while-800: #4A4DB8;
+  --color-while-900: #3A3D96;
+  --color-while-950: #252747;
 
-  /* Darker amber warning palette — better contrast on light backgrounds */
   --color-amber-50: #FFFBEB;
   --color-amber-100: #FEF3C7;
   --color-amber-200: #FDE68A;
   --color-amber-300: #FCD34D;
-  --color-amber-400: #D97706;
-  --color-amber-500: #B45309;
-  --color-amber-600: #92400E;
-  --color-amber-700: #78350F;
-  --color-amber-800: #451A03;
-  --color-amber-900: #331505;
-  --color-amber-950: #1A0B02;
+  --color-amber-400: #FBBF24;
+  --color-amber-500: #F59E0B;
+  --color-amber-600: #D97706;
+  --color-amber-700: #B45309;
+  --color-amber-800: #92400E;
+  --color-amber-900: #78350F;
+  --color-amber-950: #451A03;
 }
 
-.while-logo-underline {
-  background-color: lab(45.7648 63.3751 40.1851 / 0.5);
+html.dark,
+html {
+  --ui-text: #A1A1AA;
+  --ui-text-muted: #71717A;
+  --ui-text-dimmed: #52525B;
+  --ui-text-highlighted: #FAFAFA;
+  --ui-border: #27272A;
+  --ui-bg: #09090B;
+  --ui-bg-elevated: #18181B;
+  --ui-bg-accented: #27272A;
 }
 
-:root {
-  --while-serif-font: 'Instrument Serif', 'Instrument Serif Fallback: Times New Roman', 'Instrument Serif Fallback: Georgia', 'Instrument Serif Fallback: Noto Serif', 'Instrument Serif Fallback', Georgia, serif;
-  --while-nav-color: lab(24.3332 2.55893 -10.8851);
+html.dark body,
+body {
+  background-color: #09090B;
+  color: var(--ui-text);
 }
 
-.while-dashboard-navbar-title {
-  font-family: var(--while-serif-font);
-  color: var(--while-nav-color);
-  font-size: 1.125rem;
-  line-height: 1.35;
+/* Top pill navigation */
+.while-top-nav-pills [data-slot="link"][data-active="true"] {
+  background-color: #FAFAFA;
+  color: #09090B;
+  border-radius: 9999px;
 }
 
-.while-sidebar-nav [data-slot="link"],
-.while-sidebar-nav [data-slot="linkLabel"] {
-  font-family: var(--while-serif-font);
-  color: var(--while-nav-color);
-}
-
-.while-sidebar-nav [data-slot="linkLabel"] {
-  font-size: 1.0625rem;
-  line-height: 1.35;
-}
-
-.while-sidebar-nav [data-slot="link"]:not([aria-current]) [data-slot="linkLeadingIcon"] {
-  color: var(--while-nav-color);
-}
-
-.while-sidebar-nav [data-slot="link"][data-active="true"],
-.while-sidebar-nav [data-slot="link"][data-active="true"] [data-slot="linkLabel"] {
-  color: var(--while-nav-color);
-}
-
-.while-sidebar-collapse {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  z-index: 20;
-  display: none;
-  width: 1.25rem;
-  height: 1.75rem;
-  translate: 50% -50%;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.375rem;
-  border: 1px solid var(--ui-border);
-  background: var(--ui-bg);
+.while-top-nav-pills [data-slot="link"]:not([data-active="true"]) {
   color: var(--ui-text-muted);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
-  cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease,
-    box-shadow 0.2s ease;
+  border-radius: 9999px;
 }
 
-@media (min-width: 1024px) {
-  .while-sidebar-collapse {
-    display: inline-flex;
-  }
+.while-top-nav-pills [data-slot="link"]:not([data-active="true"]):hover {
+  color: var(--ui-text-highlighted);
+  background-color: rgb(39 39 42 / 0.6);
 }
 
-.while-sidebar-collapse:hover {
-  border-color: var(--ui-primary);
-  background: var(--ui-bg);
-  color: var(--ui-primary);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
-}
-
-.while-sidebar-collapse-icon :deep(svg) {
-  stroke-width: 1.5;
-}
-
-/* Light theme — mockup splash aesthetic */
-html:not(.dark) {
-  --ui-text: #3D3D42;
-  --ui-text-muted: #6B6B72;
-  --ui-text-dimmed: #94949C;
-  --ui-text-highlighted: #1C1C1E;
-  --ui-border: #E8E8EE;
-  --ui-bg-elevated: rgb(255 255 255 / 0.82);
-}
-
-html:not(.dark) body {
-  background-color: #FAFAFC;
-  background-image:
-    radial-gradient(ellipse 90% 70% at 100% 0%, rgb(255 228 210 / 0.35), transparent 55%),
-    radial-gradient(ellipse 80% 60% at 0% 100%, rgb(210 218 255 / 0.4), transparent 50%),
-    radial-gradient(ellipse 70% 55% at 100% 100%, rgb(220 215 255 / 0.3), transparent 45%);
-  background-attachment: fixed;
-}
-
-html:not(.dark) .while-sidebar {
-  background: rgb(255 255 255 / 0.72);
-  backdrop-filter: blur(16px);
-  border-color: rgb(232 232 238 / 0.8);
-}
-
-html:not(.dark) [data-slot="root"].bg-default,
-html:not(.dark) .bg-default {
-  background-color: rgb(255 255 255 / 0.55);
-}
-
-html:not(.dark) [data-slot="content"].bg-default {
-  background-color: #ffffff;
-}
-
-html:not(.dark) .font-serif {
-  font-family: var(--font-serif);
-}
-
-/* Unovis charts — aligned with while dashboard theme */
+/* Unovis charts — dark theme */
 .while-unovis-chart {
   --vis-font-family: var(--font-sans);
-  --vis-color-main: var(--color-while-600);
-  --vis-color-main-light: var(--color-while-200);
-  --vis-color-main-dark: var(--color-while-800);
+  --vis-color-main: var(--color-while-500);
+  --vis-color-main-light: var(--color-while-300);
+  --vis-color-main-dark: var(--color-while-700);
   --vis-color-grey: var(--ui-text-dimmed);
   --vis-color-grey-light: var(--ui-border);
   --vis-color-grey-dark: var(--ui-text-muted);
-  --vis-crosshair-line-stroke-color: var(--color-while-500);
+  --vis-crosshair-line-stroke-color: var(--color-while-400);
   --vis-crosshair-line-stroke-width: 1px;
-  --vis-crosshair-circle-stroke-color: #ffffff;
+  --vis-crosshair-circle-stroke-color: #FAFAFA;
   --vis-crosshair-circle-stroke-width: 2px;
-  --vis-axis-grid-color: rgb(232 232 238 / 0.65);
+  --vis-axis-grid-color: rgb(39 39 42 / 0.8);
   --vis-axis-tick-color: transparent;
   --vis-axis-tick-label-color: var(--ui-text-dimmed);
   --vis-axis-domain-color: var(--ui-border);
-  --vis-tooltip-background-color: #ffffff;
+  --vis-tooltip-background-color: #18181B;
   --vis-tooltip-border-color: var(--ui-border);
   --vis-tooltip-text-color: var(--ui-text-highlighted);
-  --vis-tooltip-shadow-color: rgb(30 31 61 / 0.08);
+  --vis-tooltip-shadow-color: rgb(0 0 0 / 0.4);
   --vis-tooltip-padding: 8px 12px;
   font-family: var(--font-sans);
+}
+
+.while-unovis-chart--hero {
+  --vis-color-main: #FAFAFA;
+  --vis-crosshair-line-stroke-color: rgb(250 250 250 / 0.8);
+  --vis-axis-grid-color: rgb(255 255 255 / 0.12);
+  --vis-axis-tick-label-color: rgb(250 250 250 / 0.55);
+  --vis-axis-domain-color: rgb(255 255 255 / 0.15);
+  --vis-tooltip-background-color: #18181B;
 }
 
 .while-unovis-chart :is(.unovis-xy-container, .unovis-single-container) {
@@ -212,7 +139,7 @@ html:not(.dark) .font-serif {
   height: 0.5rem;
   border-radius: 9999px;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
 }
 
 .while-chart-tooltip-label {
@@ -224,4 +151,38 @@ html:not(.dark) .font-serif {
   font-weight: 600;
   color: var(--ui-text-highlighted);
   font-variant-numeric: tabular-nums;
+}
+
+/* Uptime gauge */
+.while-gauge {
+  position: relative;
+  width: 10rem;
+  height: 5rem;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.while-gauge-track,
+.while-gauge-fill {
+  position: absolute;
+  left: 0;
+  width: 10rem;
+  height: 10rem;
+  border-radius: 9999px;
+  border: 10px solid transparent;
+  box-sizing: border-box;
+}
+
+.while-gauge-track {
+  top: 0;
+  border-top-color: var(--ui-border);
+  border-left-color: var(--ui-border);
+  border-right-color: var(--ui-border);
+  transform: rotate(0deg);
+}
+
+.while-gauge-fill {
+  top: 0;
+  border-top-color: var(--color-while-500);
+  transform: rotate(0deg);
 }

@@ -2,13 +2,8 @@ export default defineAppConfig({
   ui: {
     colors: {
       primary: 'while',
-      neutral: 'stone',
+      neutral: 'zinc',
       warning: 'amber'
-    },
-    dashboardNavbar: {
-      slots: {
-        title: 'while-dashboard-navbar-title flex items-center gap-1.5 font-normal truncate'
-      }
     }
   }
 })

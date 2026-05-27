@@ -22,7 +22,7 @@ const showBack = computed(() => canGoBack.value && route.path !== '/')
     />
     <div class="flex items-center gap-3 min-w-0">
       <slot>
-        <span class="text-lg">{{ title }}</span>
+        <span class="text-xl font-semibold tracking-tight text-highlighted">{{ title }}</span>
       </slot>
     </div>
   </div>

@@ -1,37 +1,29 @@
 <script setup lang="ts">
-const { isLive } = useEnvironment()
-
 useSeoMeta({ title: 'Overview' })
 </script>
 
 <template>
-  <UDashboardPanel
-    id="overview"
-    :class="isLive ? 'ring-1 ring-success/20 rounded-lg' : undefined"
-  >
-    <template #header>
-      <UDashboardNavbar :ui="{ right: 'gap-3' }">
-        <template #title>
-          <NavTitle title="Overview" />
-        </template>
-        <template #right>
-          <EnvironmentSwitcher />
-          <UButton
-            to="/support/request"
-            label="Request Support"
-            icon="i-lucide-plus"
-            size="sm"
-          />
-        </template>
-      </UDashboardNavbar>
-    </template>
+  <div class="space-y-6">
+    <PageHeader title="Overview">
+      <template #actions>
+        <UButton
+          to="/support"
+          label="Support"
+          icon="i-lucide-plus"
+          size="sm"
+        />
+      </template>
+    </PageHeader>
 
-    <template #body>
-      <div class="space-y-6">
-        <DashboardUsageStats />
-        <DashboardUsageChart />
-        <DashboardRecentActivity />
+    <div class="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-5">
+      <div class="flex min-h-80 flex-col lg:col-span-2 lg:min-h-0">
+        <DashboardPerformanceAiSummary class="h-full min-h-0" />
       </div>
-    </template>
-  </UDashboardPanel>
+      <div class="flex min-h-80 flex-col lg:col-span-3 lg:min-h-0">
+        <DashboardUsageChart class="h-full min-h-0" />
+      </div>
+    </div>
+
+    <DashboardConnectionWatchlist />
+  </div>
 </template>

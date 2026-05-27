@@ -1,101 +1,54 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-const open = ref(false)
-
-const links = [[{
+const links: NavigationMenuItem[] = [{
   label: 'Overview',
   icon: 'i-lucide-layout-dashboard',
-  to: '/',
-  onSelect: () => { open.value = false }
+  to: '/'
 }, {
   label: 'Connections',
   icon: 'i-lucide-network',
-  to: '/connections',
-  onSelect: () => { open.value = false }
+  to: '/connections'
 }, {
   label: 'Messages',
   icon: 'i-lucide-activity',
-  to: '/messages',
-  onSelect: () => { open.value = false }
+  to: '/messages'
 }, {
   label: 'Tunnel Uptime',
   icon: 'i-lucide-shield-check',
-  to: '/uptime',
-  onSelect: () => { open.value = false }
+  to: '/uptime'
 }, {
   label: 'Logs',
   icon: 'i-lucide-terminal',
-  to: '/logs',
-  onSelect: () => { open.value = false }
+  to: '/logs'
 }, {
   label: 'Compliance',
   icon: 'i-lucide-shield-check',
-  to: '/compliance',
-  onSelect: () => { open.value = false }
+  to: '/compliance'
 }, {
   label: 'Developer Docs',
   icon: 'i-lucide-book-open',
-  to: '/docs',
-  onSelect: () => { open.value = false }
+  to: '/docs'
 }, {
-  label: 'Request Support',
+  label: 'Support',
   icon: 'i-lucide-headphones',
-  to: '/support/request',
-  badge: 'New',
-  onSelect: () => { open.value = false }
+  to: '/support'
 }, {
   label: 'Settings',
   icon: 'i-lucide-settings',
-  to: '/settings',
-  onSelect: () => { open.value = false }
-}]] satisfies NavigationMenuItem[][]
+  to: '/settings'
+}]
 
 const groups = computed(() => [{
   id: 'links',
   label: 'Go to',
-  items: links.flat()
+  items: links.map(({ label, icon, to }) => ({ label, icon, to }))
 }])
 </script>
 
 <template>
-  <UDashboardGroup unit="rem">
-    <div class="relative shrink-0">
-      <UDashboardSidebar
-        id="default"
-        v-model:open="open"
-        collapsible
-        resizable
-        class="while-sidebar bg-elevated/25"
-        :ui="{ footer: 'lg:border-t lg:border-default' }"
-      >
-        <template #header="{ collapsed }">
-          <WhileSidebarBrand :collapsed="collapsed" />
-        </template>
-
-        <template #default="{ collapsed }">
-          <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
-
-          <UNavigationMenu
-            :collapsed="collapsed"
-            :items="links[0]"
-            orientation="vertical"
-            tooltip
-            popover
-            class="while-sidebar-nav"
-          />
-        </template>
-
-        <template #footer="{ collapsed }">
-          <UserMenu :collapsed="collapsed" />
-        </template>
-      </UDashboardSidebar>
-
-      <WhileSidebarCollapse />
-    </div>
-
+  <WhileAppShell>
     <UDashboardSearch :groups="groups" />
-
     <slot />
-  </UDashboardGroup>
+  </WhileAppShell>
 </template>

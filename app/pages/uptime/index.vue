@@ -104,125 +104,112 @@ function openLogDetail(log: ReturnType<typeof filterTunnelLogs>[number]) {
 </script>
 
 <template>
-  <UDashboardPanel id="uptime">
-    <template #header>
-      <UDashboardNavbar :ui="{ right: 'gap-3' }">
-        <template #title>
-          <NavTitle title="Tunnel Uptime" />
-        </template>
-        <template #right>
-          <EnvironmentSwitcher />
-        </template>
-      </UDashboardNavbar>
-
-      <UDashboardToolbar>
-        <template #left>
-          <UInput
-            v-model="selectedDate"
-            type="date"
-            class="w-40"
-            aria-label="Filter by date"
-          />
-          <USelectMenu
-            v-model="granularity"
-            :items="granularityOptions"
-            value-key="value"
-            class="w-36"
-          />
-          <USelectMenu
-            v-if="granularity === 'minute'"
-            v-model="selectedHour"
-            :items="hourOptions"
-            value-key="value"
-            placeholder="Select hour"
-            class="w-40"
-          />
-          <USelectMenu
-            v-model="connectionFilter"
-            :items="connectionOptions"
-            value-key="value"
-            placeholder="Connection"
-            class="w-48"
-          />
-          <USelectMenu
-            v-model="severityFilter"
-            :items="severityOptions"
-            value-key="value"
-            placeholder="Severity"
-            class="w-36"
-          />
-          <USelectMenu
-            v-model="eventTypeFilter"
-            :items="eventTypeOptions"
-            value-key="value"
-            placeholder="Event type"
-            class="w-36"
-          />
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            placeholder="Search tunnel logs..."
-            class="w-56"
-          />
-          <UBadge color="neutral" variant="subtle">
-            {{ filteredLogs.length.toLocaleString() }} logs
-          </UBadge>
-        </template>
-      </UDashboardToolbar>
-    </template>
-
-    <template #body>
-      <div class="space-y-6">
-        <UptimeTunnelUptimeChart
-          :buckets="uptimeChart.buckets"
-          :connections="uptimeChart.connections"
-          :granularity="chartView"
-          :minute-mode="granularity === 'minute'"
-          :selected-hour="selectedHour"
-          :average-uptime="uptimeChart.averageUptime"
+  <div class="space-y-6">
+    <PageHeader title="Tunnel Uptime">
+      <template #filters>
+        <UInput
+          v-model="selectedDate"
+          type="date"
+          class="w-full sm:w-40"
+          aria-label="Filter by date"
         />
+        <USelectMenu
+          v-model="granularity"
+          :items="granularityOptions"
+          value-key="value"
+          class="w-full sm:w-36"
+        />
+        <USelectMenu
+          v-if="granularity === 'minute'"
+          v-model="selectedHour"
+          :items="hourOptions"
+          value-key="value"
+          placeholder="Select hour"
+          class="w-full sm:w-40"
+        />
+        <USelectMenu
+          v-model="connectionFilter"
+          :items="connectionOptions"
+          value-key="value"
+          placeholder="Connection"
+          class="w-full sm:w-48"
+        />
+        <USelectMenu
+          v-model="severityFilter"
+          :items="severityOptions"
+          value-key="value"
+          placeholder="Severity"
+          class="w-full sm:w-36"
+        />
+        <USelectMenu
+          v-model="eventTypeFilter"
+          :items="eventTypeOptions"
+          value-key="value"
+          placeholder="Event type"
+          class="w-full sm:w-36"
+        />
+        <UInput
+          v-model="search"
+          icon="i-lucide-search"
+          placeholder="Search tunnel logs..."
+          class="w-full sm:w-56"
+        />
+        <UBadge color="neutral" variant="subtle">
+          {{ filteredLogs.length.toLocaleString() }} logs
+        </UBadge>
+      </template>
+    </PageHeader>
 
-        <UCard>
-          <template #header>
-            <div>
-              <h3 class="font-semibold text-highlighted">Tunnel Log</h3>
-              <p class="text-sm text-muted mt-0.5">
-                Connectivity events matching the filters above — click a row for details
-              </p>
-            </div>
-          </template>
+    <UptimeTunnelUptimeChart
+      :buckets="uptimeChart.buckets"
+      :connections="uptimeChart.connections"
+      :granularity="chartView"
+      :minute-mode="granularity === 'minute'"
+      :selected-hour="selectedHour"
+      :average-uptime="uptimeChart.averageUptime"
+    />
 
-          <UptimeTunnelLogTable :logs="paginatedLogs" @select="openLogDetail" />
+    <UCard>
+      <template #header>
+        <div>
+          <h3 class="font-semibold text-highlighted">
+            Tunnel Log
+          </h3>
+          <p class="text-sm text-muted mt-0.5">
+            Connectivity events matching the filters above — click a row for details
+          </p>
+        </div>
+      </template>
 
-          <template #footer>
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p class="text-sm text-muted">
-                Showing
-                {{ filteredLogs.length ? (page - 1) * pageSize + 1 : 0 }}–{{
-                  Math.min(page * pageSize, filteredLogs.length)
-                }}
-                of {{ filteredLogs.length.toLocaleString() }}
-              </p>
-              <UPagination
-                v-model:page="page"
-                :total="filteredLogs.length"
-                :items-per-page="pageSize"
-                show-edges
-              />
-            </div>
-          </template>
-        </UCard>
-      </div>
+      <UptimeTunnelLogTable :logs="paginatedLogs" @select="openLogDetail" />
 
-      <USlideover
-        v-model:open="detailOpen"
-        title="Tunnel log details"
-        description="Connectivity event details and related incident reports"
-      >
-        <template #body>
-          <UptimeTunnelLogDetail v-if="selectedLog" :log="selectedLog" />
-        </template>
-      </USlideover>
-    </template>
-  </UDashboardPanel>
+      <template #footer>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-sm text-muted">
+            Showing
+            {{ filteredLogs.length ? (page - 1) * pageSize + 1 : 0 }}–{{
+              Math.min(page * pageSize, filteredLogs.length)
+            }}
+            of {{ filteredLogs.length.toLocaleString() }}
+          </p>
+          <UPagination
+            v-model:page="page"
+            :total="filteredLogs.length"
+            :items-per-page="pageSize"
+            show-edges
+          />
+        </div>
+      </template>
+    </UCard>
+
+    <USlideover
+      v-model:open="detailOpen"
+      title="Tunnel log details"
+      description="Connectivity event details and related incident reports"
+    >
+      <template #body>
+        <UptimeTunnelLogDetail v-if="selectedLog" :log="selectedLog" />
+      </template>
+    </USlideover>
+  </div>
 </template>

@@ -3,6 +3,14 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type { SupportTicketCategory, SupportTicketForm } from '~/types/while'
 
+const props = defineProps<{
+  embedded?: boolean
+}>()
+
+const emit = defineEmits<{
+  submitted: [key: string]
+}>()
+
 const router = useRouter()
 const { connections } = useConnections()
 const { submitTicket } = useSupportRequests()
@@ -47,14 +55,23 @@ watch(() => state.category, (category) => {
 })
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  submitTicket(event.data as SupportTicketForm)
-  await router.push('/')
+  const key = submitTicket(event.data as SupportTicketForm)
+  if (props.embedded) {
+    emit('submitted', key)
+    return
+  }
+  await router.push({ path: '/support', query: { selected: key } })
 }
 </script>
 
 <template>
-  <UCard class="w-full">
-    <UForm :schema="schema" :state="state" class="space-y-6" @submit="onSubmit">
+  <UCard :class="embedded ? 'w-full border-0 shadow-none bg-transparent' : 'w-full'">
+    <UForm
+      :schema="schema"
+      :state="state"
+      class="space-y-6"
+      @submit="onSubmit"
+    >
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <UFormField label="Request Type" name="category" required>
           <USelectMenu

@@ -35,43 +35,37 @@ useSeoMeta({ title: 'Connections' })
 </script>
 
 <template>
-  <UDashboardPanel id="connections">
-    <template #header>
-      <UDashboardNavbar :ui="{ right: 'gap-3' }">
-        <template #title>
-          <NavTitle title="Connections" />
-        </template>
-        <template #right>
-          <EnvironmentSwitcher />
-          <UButton to="/support/new-connection" label="New Connection" icon="i-lucide-plus" size="sm" />
-        </template>
-      </UDashboardNavbar>
+  <div class="space-y-6">
+    <PageHeader title="Connections">
+      <template #actions>
+        <UButton
+          to="/support?compose=connection"
+          label="New Connection"
+          icon="i-lucide-plus"
+          size="sm"
+        />
+      </template>
+      <template #filters>
+        <USelectMenu
+          v-model="statusFilter"
+          :items="statusOptions"
+          value-key="value"
+          placeholder="Filter by status"
+          class="w-full sm:w-44"
+        />
+        <USelectMenu
+          v-model="vendorFilter"
+          :items="vendorOptions"
+          value-key="value"
+          placeholder="Filter by EHR"
+          class="w-full sm:w-44"
+        />
+        <UBadge color="neutral" variant="subtle">
+          {{ filtered.length }} in {{ environmentLabel }}
+        </UBadge>
+      </template>
+    </PageHeader>
 
-      <UDashboardToolbar>
-        <template #left>
-          <USelectMenu
-            v-model="statusFilter"
-            :items="statusOptions"
-            value-key="value"
-            placeholder="Filter by status"
-            class="w-44"
-          />
-          <USelectMenu
-            v-model="vendorFilter"
-            :items="vendorOptions"
-            value-key="value"
-            placeholder="Filter by EHR"
-            class="w-44"
-          />
-          <UBadge color="neutral" variant="subtle">
-            {{ filtered.length }} in {{ environmentLabel }}
-          </UBadge>
-        </template>
-      </UDashboardToolbar>
-    </template>
-
-    <template #body>
-      <ConnectionsConnectionTable :connections="filtered" />
-    </template>
-  </UDashboardPanel>
+    <ConnectionsConnectionTable :connections="filtered" />
+  </div>
 </template>

@@ -3,6 +3,7 @@
 
 @theme static {
   --font-sans: 'Inter', 'Inter Fallback', system-ui, sans-serif;
+  --font-instrument-serif: 'Instrument Serif', 'Instrument Serif Fallback', 'Instrument Serif', Georgia, serif;
 
   --color-while-50: #F0F0FC;
   --color-while-100: #E0E1F9;
@@ -29,8 +30,44 @@
   --color-amber-950: #451A03;
 }
 
-html.dark,
-html {
+:root {
+  --while-brand: lab(46.4195 14.6904 -42.411);
+  --while-accent: var(--while-brand);
+  --while-chart-surface: var(--while-brand);
+  --while-chart-fg: #FAFAFA;
+  --while-chart-fg-muted: rgb(250 250 250 / 0.65);
+  --while-chart-fg-dimmed: rgb(250 250 250 / 0.45);
+}
+
+html:not(.dark) {
+  --ui-text: #52525B;
+  --ui-text-muted: #71717A;
+  --ui-text-dimmed: #A1A1AA;
+  --ui-text-highlighted: #18181B;
+  --ui-border: #E4E4E7;
+  --ui-bg: #FAFAF9;
+  --ui-bg-elevated: #FFFFFF;
+  --ui-bg-accented: #F4F4F5;
+
+  --color-while-400: lab(46.4195 14.6904 -42.411 / 0.75);
+  --color-while-500: lab(46.4195 14.6904 -42.411);
+  --color-while-600: lab(46.4195 14.6904 -42.411 / 0.9);
+  --color-while-700: lab(40 12 -38);
+}
+
+html:not(.dark) body {
+  background-color: #FAFAF9;
+  background-image:
+    radial-gradient(ellipse 70% 55% at 100% 0%, rgb(255 248 220 / 0.55), transparent 55%),
+    radial-gradient(ellipse 55% 45% at 8% 42%, rgb(255 228 230 / 0.45), transparent 50%),
+    radial-gradient(ellipse 65% 50% at 92% 88%, rgb(220 230 255 / 0.4), transparent 55%);
+  color: var(--ui-text);
+}
+
+html.dark {
+  --while-accent: var(--color-while-500);
+  --while-chart-surface: var(--while-brand);
+
   --ui-text: #A1A1AA;
   --ui-text-muted: #71717A;
   --ui-text-dimmed: #52525B;
@@ -41,17 +78,45 @@ html {
   --ui-bg-accented: #27272A;
 }
 
-html.dark body,
-body {
+html.dark body {
   background-color: #09090B;
+  background-image: none;
   color: var(--ui-text);
+}
+
+.font-instrument-serif {
+  font-family: var(--font-instrument-serif);
+}
+
+/* Logo accent line */
+.while-logo-line {
+  background-color: var(--while-accent);
+}
+
+html.dark .while-logo-line {
+  background-color: var(--color-while-500);
+}
+
+/* Primary buttons — light mode accent */
+html:not(.dark) button[data-color="primary"]:not(:disabled),
+html:not(.dark) a[data-color="primary"] {
+  --ui-primary: var(--while-brand);
+  color: #FAFAFA;
 }
 
 /* Top pill navigation */
 .while-top-nav-pills [data-slot="link"][data-active="true"] {
+  border-radius: 9999px;
+}
+
+html:not(.dark) .while-top-nav-pills [data-slot="link"][data-active="true"] {
+  background-color: #18181B;
+  color: #FAFAFA;
+}
+
+html.dark .while-top-nav-pills [data-slot="link"][data-active="true"] {
   background-color: #FAFAFA;
   color: #09090B;
-  border-radius: 9999px;
 }
 
 .while-top-nav-pills [data-slot="link"]:not([data-active="true"]) {
@@ -59,9 +124,54 @@ body {
   border-radius: 9999px;
 }
 
-.while-top-nav-pills [data-slot="link"]:not([data-active="true"]):hover {
+html:not(.dark) .while-top-nav-pills [data-slot="link"]:not([data-active="true"]):hover {
+  color: var(--ui-text-highlighted);
+  background-color: rgb(228 228 231 / 0.75);
+}
+
+html.dark .while-top-nav-pills [data-slot="link"]:not([data-active="true"]):hover {
   color: var(--ui-text-highlighted);
   background-color: rgb(39 39 42 / 0.6);
+}
+
+/* Chart surface (hero throughput card) */
+.while-chart-surface {
+  background-color: var(--while-chart-surface);
+  color: var(--while-chart-fg);
+  --tw-ring-color: rgb(255 255 255 / 0.12);
+}
+
+.while-chart-surface .while-chart-label {
+  color: var(--while-chart-fg-muted);
+}
+
+.while-chart-surface .while-chart-value {
+  color: var(--while-chart-fg);
+}
+
+.while-chart-surface .while-chart-meta {
+  color: var(--while-chart-fg-dimmed);
+}
+
+.while-chart-surface .while-chart-legend {
+  color: var(--while-chart-fg-muted);
+}
+
+.while-chart-surface .while-chart-timeframe {
+  color: var(--while-chart-fg-dimmed);
+}
+
+.while-chart-surface .while-chart-timeframe:hover {
+  color: var(--while-chart-fg-muted);
+}
+
+.while-chart-surface .while-chart-timeframe--active {
+  color: var(--while-chart-fg);
+  text-decoration-color: rgb(250 250 250 / 0.75);
+}
+
+.while-chart-surface .while-chart-swatch {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25);
 }
 
 /* Unovis charts — dark theme */
@@ -77,7 +187,7 @@ body {
   --vis-crosshair-line-stroke-width: 1px;
   --vis-crosshair-circle-stroke-color: #FAFAFA;
   --vis-crosshair-circle-stroke-width: 2px;
-  --vis-axis-grid-color: rgb(39 39 42 / 0.8);
+  --vis-axis-grid-color: rgb(39 39 42 / 0.35);
   --vis-axis-tick-color: transparent;
   --vis-axis-tick-label-color: var(--ui-text-dimmed);
   --vis-axis-domain-color: var(--ui-border);
@@ -89,13 +199,33 @@ body {
   font-family: var(--font-sans);
 }
 
-.while-unovis-chart--hero {
+html:not(.dark) .while-unovis-chart:not(.while-unovis-chart--hero) {
+  --vis-axis-grid-color: rgb(24 24 27 / 0.08);
+}
+
+.while-chart-surface .while-unovis-chart--hero {
   --vis-color-main: #FAFAFA;
   --vis-crosshair-line-stroke-color: rgb(250 250 250 / 0.8);
-  --vis-axis-grid-color: rgb(255 255 255 / 0.12);
+  --vis-axis-grid-color: rgb(255 255 255 / 0.14);
   --vis-axis-tick-label-color: rgb(250 250 250 / 0.55);
-  --vis-axis-domain-color: rgb(255 255 255 / 0.15);
-  --vis-tooltip-background-color: #18181B;
+  --vis-axis-domain-color: rgb(255 255 255 / 0.18);
+  --vis-tooltip-background-color: var(--while-brand);
+  --vis-tooltip-border-color: rgb(255 255 255 / 0.15);
+  --vis-tooltip-text-color: #FAFAFA;
+  --vis-tooltip-shadow-color: rgb(0 0 0 / 0.35);
+}
+
+.while-chart-surface .while-chart-tooltip-header {
+  color: var(--while-chart-fg);
+  border-bottom-color: rgb(255 255 255 / 0.15);
+}
+
+.while-chart-surface .while-chart-tooltip-label {
+  color: var(--while-chart-fg-muted);
+}
+
+.while-chart-surface .while-chart-tooltip-value {
+  color: var(--while-chart-fg);
 }
 
 .while-unovis-chart :is(.unovis-xy-container, .unovis-single-container) {

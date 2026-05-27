@@ -1,15 +1,15 @@
 <script setup lang="ts">
 const colorMode = useColorMode()
 
-onMounted(() => {
-  colorMode.preference = 'dark'
-})
+const themeColor = computed(() =>
+  colorMode.value === 'dark' ? '#09090B' : '#FAFAF9'
+)
 
 useHead({
   meta: [
     { charset: 'utf-8' },
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-    { key: 'theme-color', name: 'theme-color', content: '#09090B' }
+    { key: 'theme-color', name: 'theme-color', content: themeColor }
   ],
   link: [
     { rel: 'icon', type: 'image/png', href: '/favicon.png' },
@@ -19,12 +19,11 @@ useHead({
     { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
     {
       rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+      href: 'https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&display=swap'
     }
   ],
   htmlAttrs: {
-    lang: 'en',
-    class: 'dark'
+    lang: 'en'
   }
 })
 

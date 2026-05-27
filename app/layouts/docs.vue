@@ -51,8 +51,8 @@ const { data: navigation } = await useAsyncData('docs-nav', () =>
         </template>
       </UDashboardSidebar>
 
-      <div class="min-w-0 flex-1 overflow-y-auto">
-        <div class="p-4 lg:p-6">
+      <div class="min-w-0 flex-1 overflow-y-auto scroll-pt-28 lg:scroll-pt-24">
+        <div class="px-4 pb-6 pt-10 lg:px-6 lg:pb-8 lg:pt-12">
           <slot />
         </div>
       </div>

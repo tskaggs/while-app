@@ -27,7 +27,7 @@ useSeoMeta({ title: page.value.title })
       v-if="page?.body?.toc?.links?.length"
       class="hidden w-56 shrink-0 xl:block"
     >
-      <div class="sticky top-6">
+      <div class="sticky top-28 max-h-[calc(100svh-8rem)] overflow-y-auto pb-6 xl:top-20 xl:max-h-[calc(100svh-6rem)]">
         <UContentToc :links="page.body.toc.links" />
       </div>
     </aside>

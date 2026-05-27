@@ -5,7 +5,7 @@ import {
   VisLine,
   VisTooltip,
   VisXYContainer,
-  getChartColor
+  getChartHeroColor
 } from '~/utils/unovis'
 import { buildChartTooltipHtml, formatChartTooltipDateUtc } from '~/utils/chartTooltip'
 import type { UsageDataPoint } from '~/types/while'
@@ -44,7 +44,7 @@ const chartSeries = computed(() =>
   connections.value.map((connection, index) => ({
     id: connection.id,
     label: connection.partnerName,
-    color: getChartColor(index)
+    color: getChartHeroColor(index)
   }))
 )
 
@@ -98,22 +98,22 @@ const template = (d: DataRecord) => {
 <template>
   <div
     ref="cardRef"
-    class="flex h-full min-h-0 flex-col overflow-visible rounded-xl bg-while-900 p-5 ring-1 ring-while-800/80"
+    class="while-chart-surface flex h-full min-h-0 flex-col overflow-visible rounded-xl p-5 ring-1"
   >
     <div class="flex items-start justify-between gap-4 shrink-0">
       <div class="min-w-0 flex-1">
-        <p class="text-xs font-medium uppercase tracking-wide text-white/60">
+        <p class="while-chart-label text-xs font-medium uppercase tracking-wide">
           Message throughput
         </p>
         <div class="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <p class="text-3xl font-semibold tabular-nums text-white">
+          <p class="while-chart-value text-3xl font-semibold tabular-nums">
             {{ formatNumber(totalMessages) }}
           </p>
-          <p class="text-sm tabular-nums text-white/55">
+          <p class="while-chart-label text-sm tabular-nums">
             {{ averageUptime }}% avg uptime
           </p>
         </div>
-        <p class="mt-0.5 text-xs text-white/50">
+        <p class="while-chart-meta mt-0.5 text-xs">
           {{ timeframe }} · {{ data.length }} day{{ data.length === 1 ? '' : 's' }} · by connection
         </p>
         <div
@@ -123,10 +123,10 @@ const template = (d: DataRecord) => {
           <span
             v-for="series in chartSeries"
             :key="series.id"
-            class="inline-flex max-w-[10rem] items-center gap-1.5 text-[10px] text-white/55"
+            class="while-chart-legend inline-flex max-w-[10rem] items-center gap-1.5 text-[10px]"
           >
             <span
-              class="size-2 shrink-0 rounded-full ring-1 ring-inset ring-white/20"
+              class="while-chart-swatch size-2 shrink-0 rounded-full"
               :style="{ backgroundColor: series.color }"
             />
             <span class="truncate">{{ series.label }}</span>
@@ -138,10 +138,8 @@ const template = (d: DataRecord) => {
           v-for="option in timeframeOptions"
           :key="option"
           type="button"
-          class="px-2 py-1 rounded-md transition-colors"
-          :class="timeframe === option
-            ? 'text-white underline underline-offset-4 decoration-white/80'
-            : 'text-white/45 hover:text-white/70'"
+          class="while-chart-timeframe px-2 py-1 rounded-md transition-colors"
+          :class="{ 'while-chart-timeframe--active underline underline-offset-4': timeframe === option }"
           @click="timeframe = option"
         >
           {{ option }}
@@ -175,7 +173,7 @@ const template = (d: DataRecord) => {
           :grid-line="true"
           :num-ticks="4"
         />
-        <VisCrosshair color="rgb(250 250 250 / 0.6)" :template="template" />
+        <VisCrosshair color="rgb(250 250 250 / 0.75)" :template="template" />
         <VisTooltip />
       </VisXYContainer>
     </div>

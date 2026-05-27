@@ -23,6 +23,20 @@ export function getChartColor(index: number): string {
   return whileChartPalette[index % whileChartPalette.length]!
 }
 
+/** Light series colors for charts on dark red surfaces */
+export const whileChartHeroPalette = [
+  '#FAFAFA',
+  'rgb(250 250 250 / 0.75)',
+  '#F5E6E6',
+  '#FFF0E0',
+  '#E8E4FF',
+  '#FFD6D6'
+] as const
+
+export function getChartHeroColor(index: number): string {
+  return whileChartHeroPalette[index % whileChartHeroPalette.length]!
+}
+
 export const stackedBarConfig = {
   roundedCorners: 4,
   barPadding: 0.2

@@ -10,6 +10,17 @@ export type LogSeverity = 'info' | 'warn' | 'error' | 'success'
 
 export type LogTimeRange = '1h' | '6h' | '24h' | 'all'
 
+export type LogCategory =
+  | 'integration'
+  | 'tunnel'
+  | 'webhook'
+  | 'mapping'
+  | 'credential'
+  | 'sidecar'
+  | 'api'
+  | 'audit'
+  | 'system'
+
 export interface FlightCheck {
   mtu: boolean
   handshake: boolean
@@ -54,9 +65,20 @@ export interface LogEntry {
   connectionId: string
   partnerName: string
   severity: LogSeverity
+  category: LogCategory
   resourceType?: string
   message: string
   anonymizedMessage: string
+  eventType?: string
+  hl7MessageType?: string
+  correlationId?: string
+  durationMs?: number
+  statusCode?: number
+  actor?: string
+  ipAddress?: string
+  source?: string
+  details?: string
+  metadata?: Record<string, string | number | boolean>
 }
 
 export interface SupportRequest {

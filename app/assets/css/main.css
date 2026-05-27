@@ -3,6 +3,7 @@
 
 @theme static {
   --font-sans: 'Inter', 'Inter Fallback', system-ui, sans-serif;
+  --font-instrument-serif: 'Instrument Serif', 'Instrument Serif Fallback', 'Instrument Serif', Georgia, serif;
 
   --color-while-50: #F0F0FC;
   --color-while-100: #E0E1F9;
@@ -45,6 +46,10 @@ html.dark body,
 body {
   background-color: #09090B;
   color: var(--ui-text);
+}
+
+.font-instrument-serif {
+  font-family: var(--font-instrument-serif);
 }
 
 /* Top pill navigation */

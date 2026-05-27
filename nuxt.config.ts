@@ -19,7 +19,7 @@ export default defineNuxtConfig({
     preference: 'dark',
     fallback: 'dark',
     storage: 'localStorage',
-    storageKey: 'while-color-mode-locked'
+    storageKey: 'while-color-mode'
   },
 
   content: {

@@ -5,6 +5,8 @@ defineProps<{
   collapsed?: boolean
 }>()
 
+const colorMode = useColorMode()
+
 const user = ref({
   name: 'Sarah Chen',
   avatar: {
@@ -17,6 +19,33 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   type: 'label',
   label: user.value.name,
   avatar: user.value.avatar
+}], [{
+  label: 'Light',
+  icon: 'i-lucide-sun',
+  type: 'checkbox',
+  checked: colorMode.preference === 'light',
+  onSelect(e: Event) {
+    e.preventDefault()
+    colorMode.preference = 'light'
+  }
+}, {
+  label: 'Dark',
+  icon: 'i-lucide-moon',
+  type: 'checkbox',
+  checked: colorMode.preference === 'dark',
+  onSelect(e: Event) {
+    e.preventDefault()
+    colorMode.preference = 'dark'
+  }
+}, {
+  label: 'System',
+  icon: 'i-lucide-monitor',
+  type: 'checkbox',
+  checked: colorMode.preference === 'system',
+  onSelect(e: Event) {
+    e.preventDefault()
+    colorMode.preference = 'system'
+  }
 }], [{
   label: 'Settings',
   icon: 'i-lucide-settings',

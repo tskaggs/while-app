@@ -10,6 +10,20 @@ useSeoMeta({ title: 'Settings' })
       <UCard class="rounded-xl border border-default bg-elevated">
         <template #header>
           <h3 class="font-semibold text-highlighted">
+            Appearance
+          </h3>
+          <p class="text-sm text-muted mt-1">
+            Choose light or dark mode, or match your system preference.
+          </p>
+        </template>
+        <UFormField label="Theme">
+          <UColorModeSelect class="w-full sm:max-w-xs" />
+        </UFormField>
+      </UCard>
+
+      <UCard class="rounded-xl border border-default bg-elevated">
+        <template #header>
+          <h3 class="font-semibold text-highlighted">
             Organization
           </h3>
         </template>

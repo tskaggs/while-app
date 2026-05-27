@@ -1,4 +1,4 @@
-import type { ComplianceData, SupportRequest } from '~/types/while'
+import type { ComplianceData, SupportRequest, SupportTicket } from '~/types/while'
 
 export const complianceData: ComplianceData = {
   baaStatus: 'signed',
@@ -85,6 +85,32 @@ export const complianceData: ComplianceData = {
     }
   ]
 }
+
+export const supportTickets: SupportTicket[] = [
+  {
+    id: 'tkt-001',
+    category: 'connection',
+    connectionId: 'conn-sb-002',
+    partnerName: 'Summit Health Partners',
+    message: 'Tunnel handshake keeps failing after key rotation. Can you verify our WireGuard config matches the sidecar endpoint?',
+    status: 'in_progress',
+    submittedAt: '2026-05-19T16:20:00Z'
+  },
+  {
+    id: 'tkt-002',
+    category: 'billing',
+    message: 'Need to confirm whether live message volume tiers apply before our June go-live date.',
+    status: 'in_review',
+    submittedAt: '2026-05-17T11:05:00Z'
+  },
+  {
+    id: 'tkt-003',
+    category: 'general',
+    message: 'Question about BAA renewal timeline and audit log retention for compliance review.',
+    status: 'submitted',
+    submittedAt: '2026-05-21T09:45:00Z'
+  }
+]
 
 export const supportRequests: SupportRequest[] = [
   {

@@ -44,6 +44,8 @@ export interface UsageDataPoint {
   date: string
   messages: number
   fhirResources: number
+  uptime: number
+  byConnection: Record<string, number>
 }
 
 export interface LogEntry {
@@ -120,6 +122,24 @@ export interface SupportTicket {
   message: string
   status: SupportRequestStatus
   submittedAt: string
+}
+
+export type SupportInboxKind = 'connection' | 'ticket'
+
+export interface SupportInboxItem {
+  key: string
+  id: string
+  kind: SupportInboxKind
+  title: string
+  preview: string
+  status: SupportRequestStatus
+  environment?: WhileEnvironment
+  submittedAt: string
+  ehrVendor?: EhrVendor
+  targetGoLive?: string
+  category?: SupportTicketCategory
+  message?: string
+  connectionId?: string
 }
 
 export type Period = 'daily' | 'weekly' | 'monthly'

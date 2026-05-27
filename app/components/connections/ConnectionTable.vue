@@ -82,7 +82,7 @@ function formatRelative(date: string) {
       <div class="flex flex-col items-center gap-3 py-12">
         <UIcon name="i-lucide-network" class="size-10 text-muted" />
         <p class="text-muted">No connections in this environment yet.</p>
-        <UButton to="/support/new-connection" label="Request Connection Support" icon="i-lucide-plus" />
+        <UButton to="/support?compose=connection" label="Request Connection Support" icon="i-lucide-plus" />
       </div>
     </template>
   </UTable>

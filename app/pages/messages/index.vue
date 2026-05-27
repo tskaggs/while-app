@@ -108,132 +108,119 @@ function openMessageDetail(message: ReturnType<typeof filterMessages>[number]) {
 </script>
 
 <template>
-  <UDashboardPanel id="messages">
-    <template #header>
-      <UDashboardNavbar :ui="{ right: 'gap-3' }">
-        <template #title>
-          <NavTitle title="Messages" />
-        </template>
-        <template #right>
-          <EnvironmentSwitcher />
-        </template>
-      </UDashboardNavbar>
-
-      <UDashboardToolbar>
-        <template #left>
-          <UInput
-            v-model="selectedDate"
-            type="date"
-            class="w-40"
-            aria-label="Filter by date"
-          />
-          <USelectMenu
-            v-model="granularity"
-            :items="granularityOptions"
-            value-key="value"
-            class="w-36"
-          />
-          <USelectMenu
-            v-if="granularity === 'minute'"
-            v-model="selectedHour"
-            :items="hourOptions"
-            value-key="value"
-            placeholder="Select hour"
-            class="w-40"
-          />
-          <USelectMenu
-            v-model="connectionFilter"
-            :items="connectionOptions"
-            value-key="value"
-            placeholder="Connection"
-            class="w-48"
-          />
-          <USelectMenu
-            v-model="directionFilter"
-            :items="directionOptions"
-            value-key="value"
-            placeholder="Direction"
-            class="w-36"
-          />
-          <USelectMenu
-            v-model="formatFilter"
-            :items="formatOptions"
-            value-key="value"
-            placeholder="Format"
-            class="w-32"
-          />
-          <USelectMenu
-            v-model="statusFilter"
-            :items="statusOptions"
-            value-key="value"
-            placeholder="Status"
-            class="w-32"
-          />
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            placeholder="Search messages..."
-            class="w-56"
-          />
-          <UBadge color="neutral" variant="subtle">
-            {{ filteredMessages.length.toLocaleString() }} messages
-          </UBadge>
-        </template>
-      </UDashboardToolbar>
-    </template>
-
-    <template #body>
-      <div class="space-y-6">
-        <MessagesMessageHistogram
-          :buckets="histogram.buckets"
-          :connections="histogram.connections"
-          :granularity="histogramView"
-          :minute-mode="granularity === 'minute'"
-          :selected-hour="selectedHour"
-          :total="filteredMessages.length"
+  <div class="space-y-6">
+    <PageHeader title="Messages">
+      <template #filters>
+        <UInput
+          v-model="selectedDate"
+          type="date"
+          class="w-full sm:w-40"
+          aria-label="Filter by date"
         />
+        <USelectMenu
+          v-model="granularity"
+          :items="granularityOptions"
+          value-key="value"
+          class="w-full sm:w-36"
+        />
+        <USelectMenu
+          v-if="granularity === 'minute'"
+          v-model="selectedHour"
+          :items="hourOptions"
+          value-key="value"
+          placeholder="Select hour"
+          class="w-full sm:w-40"
+        />
+        <USelectMenu
+          v-model="connectionFilter"
+          :items="connectionOptions"
+          value-key="value"
+          placeholder="Connection"
+          class="w-full sm:w-48"
+        />
+        <USelectMenu
+          v-model="directionFilter"
+          :items="directionOptions"
+          value-key="value"
+          placeholder="Direction"
+          class="w-full sm:w-36"
+        />
+        <USelectMenu
+          v-model="formatFilter"
+          :items="formatOptions"
+          value-key="value"
+          placeholder="Format"
+          class="w-full sm:w-32"
+        />
+        <USelectMenu
+          v-model="statusFilter"
+          :items="statusOptions"
+          value-key="value"
+          placeholder="Status"
+          class="w-full sm:w-32"
+        />
+        <UInput
+          v-model="search"
+          icon="i-lucide-search"
+          placeholder="Search messages..."
+          class="w-full sm:w-56"
+        />
+        <UBadge color="neutral" variant="subtle">
+          {{ filteredMessages.length.toLocaleString() }} messages
+        </UBadge>
+      </template>
+    </PageHeader>
 
-        <UCard>
-          <template #header>
-            <div>
-              <h3 class="font-semibold text-highlighted">Message Log</h3>
-              <p class="text-sm text-muted mt-0.5">
-                Individual messages matching the filters above — click a row for details
-              </p>
-            </div>
-          </template>
+    <MessagesMessageHistogram
+      :buckets="histogram.buckets"
+      :connections="histogram.connections"
+      :granularity="histogramView"
+      :minute-mode="granularity === 'minute'"
+      :selected-hour="selectedHour"
+      :total="filteredMessages.length"
+    />
 
-          <MessagesMessageTable :messages="paginatedMessages" @select="openMessageDetail" />
+    <UCard>
+      <template #header>
+        <div>
+          <h3 class="font-semibold text-highlighted">
+            Message Log
+          </h3>
+          <p class="text-sm text-muted mt-0.5">
+            Individual messages matching the filters above — click a row for details
+          </p>
+        </div>
+      </template>
 
-          <template #footer>
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p class="text-sm text-muted">
-                Showing
-                {{ filteredMessages.length ? (page - 1) * pageSize + 1 : 0 }}–{{
-                  Math.min(page * pageSize, filteredMessages.length)
-                }}
-                of {{ filteredMessages.length.toLocaleString() }}
-              </p>
-              <UPagination
-                v-model:page="page"
-                :total="filteredMessages.length"
-                :items-per-page="pageSize"
-                show-edges
-              />
-            </div>
-          </template>
-        </UCard>
-      </div>
+      <MessagesMessageTable :messages="paginatedMessages" @select="openMessageDetail" />
 
-      <USlideover
-        v-model:open="detailOpen"
-        title="Message details"
-        description="Processed message metadata and connection context"
-      >
-        <template #body>
-          <MessagesMessageDetail v-if="selectedMessage" :message="selectedMessage" />
-        </template>
-      </USlideover>
-    </template>
-  </UDashboardPanel>
+      <template #footer>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-sm text-muted">
+            Showing
+            {{ filteredMessages.length ? (page - 1) * pageSize + 1 : 0 }}–{{
+              Math.min(page * pageSize, filteredMessages.length)
+            }}
+            of {{ filteredMessages.length.toLocaleString() }}
+          </p>
+          <UPagination
+            v-model:page="page"
+            :total="filteredMessages.length"
+            :items-per-page="pageSize"
+            show-edges
+          />
+        </div>
+      </template>
+    </UCard>
+
+    <USlideover
+      v-model:open="detailOpen"
+      title="Message details"
+      description="Processed message metadata and connection context"
+    >
+      <template #body>
+        <MessagesMessageDetail v-if="selectedMessage" :message="selectedMessage" />
+      </template>
+    </USlideover>
+  </div>
 </template>

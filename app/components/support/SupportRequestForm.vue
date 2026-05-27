@@ -3,6 +3,14 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type { EhrVendor, SupportRequestForm, WhileEnvironment } from '~/types/while'
 
+const props = defineProps<{
+  embedded?: boolean
+}>()
+
+const emit = defineEmits<{
+  submitted: [key: string]
+}>()
+
 const router = useRouter()
 const { submitRequest } = useSupportRequests()
 const { environment } = useEnvironment()
@@ -76,8 +84,12 @@ function prevStep() {
 }
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  submitRequest(event.data as SupportRequestForm)
-  await router.push('/connections')
+  const key = submitRequest(event.data as SupportRequestForm)
+  if (props.embedded) {
+    emit('submitted', key)
+    return
+  }
+  await router.push({ path: '/support', query: { selected: key } })
 }
 </script>
 
@@ -93,10 +105,20 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             <UInput v-model="state.partnerName" placeholder="North Valley Clinic" class="w-full" />
           </UFormField>
           <UFormField label="EHR System" name="ehrVendor" required>
-            <USelectMenu v-model="state.ehrVendor" :items="ehrOptions" placeholder="Select EHR" class="w-full" />
+            <USelectMenu
+              v-model="state.ehrVendor"
+              :items="ehrOptions"
+              placeholder="Select EHR"
+              class="w-full"
+            />
           </UFormField>
           <UFormField label="IT Contact Email" name="contactEmail" required>
-            <UInput v-model="state.contactEmail" type="email" placeholder="it@clinic.org" class="w-full" />
+            <UInput
+              v-model="state.contactEmail"
+              type="email"
+              placeholder="it@clinic.org"
+              class="w-full"
+            />
           </UFormField>
           <UFormField label="Target Go-Live Date" name="targetGoLive" required>
             <UInput v-model="state.targetGoLive" type="date" class="w-full" />
@@ -141,11 +163,21 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
               />
             </UFormField>
             <UFormField label="Estimated Daily Volume" name="estimatedVolume" required>
-              <USelectMenu v-model="state.estimatedVolume" :items="volumeOptions" placeholder="Select volume" class="w-full" />
+              <USelectMenu
+                v-model="state.estimatedVolume"
+                :items="volumeOptions"
+                placeholder="Select volume"
+                class="w-full"
+              />
             </UFormField>
           </div>
           <UFormField label="Additional Notes" name="notes">
-            <UTextarea v-model="state.notes" placeholder="Any special requirements, existing VPN setup, etc." :rows="4" class="w-full" />
+            <UTextarea
+              v-model="state.notes"
+              placeholder="Any special requirements, existing VPN setup, etc."
+              :rows="4"
+              class="w-full"
+            />
           </UFormField>
         </div>
 
@@ -153,40 +185,76 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         <div v-show="step === 3">
           <dl class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
             <div class="flex justify-between gap-4 rounded-lg border border-default px-4 py-3 sm:block">
-              <dt class="text-muted">Partner</dt>
-              <dd class="font-medium text-highlighted sm:mt-1">{{ state.partnerName }}</dd>
+              <dt class="text-muted">
+                Partner
+              </dt>
+              <dd class="font-medium text-highlighted sm:mt-1">
+                {{ state.partnerName }}
+              </dd>
             </div>
             <div class="flex justify-between gap-4 rounded-lg border border-default px-4 py-3 sm:block">
-              <dt class="text-muted">EHR</dt>
-              <dd class="font-medium text-highlighted sm:mt-1">{{ state.ehrVendor }}</dd>
+              <dt class="text-muted">
+                EHR
+              </dt>
+              <dd class="font-medium text-highlighted sm:mt-1">
+                {{ state.ehrVendor }}
+              </dd>
             </div>
             <div class="flex justify-between gap-4 rounded-lg border border-default px-4 py-3 sm:block">
-              <dt class="text-muted">Contact</dt>
-              <dd class="font-medium text-highlighted sm:mt-1">{{ state.contactEmail }}</dd>
+              <dt class="text-muted">
+                Contact
+              </dt>
+              <dd class="font-medium text-highlighted sm:mt-1">
+                {{ state.contactEmail }}
+              </dd>
             </div>
             <div class="flex justify-between gap-4 rounded-lg border border-default px-4 py-3 sm:block">
-              <dt class="text-muted">Go-Live</dt>
-              <dd class="font-medium text-highlighted sm:mt-1">{{ state.targetGoLive }}</dd>
+              <dt class="text-muted">
+                Go-Live
+              </dt>
+              <dd class="font-medium text-highlighted sm:mt-1">
+                {{ state.targetGoLive }}
+              </dd>
             </div>
             <div class="flex justify-between gap-4 rounded-lg border border-default px-4 py-3 sm:block">
-              <dt class="text-muted">Scope</dt>
-              <dd class="font-medium text-highlighted capitalize sm:mt-1">{{ state.scope?.replace('_', ' & ') }}</dd>
+              <dt class="text-muted">
+                Scope
+              </dt>
+              <dd class="font-medium text-highlighted capitalize sm:mt-1">
+                {{ state.scope?.replace('_', ' & ') }}
+              </dd>
             </div>
             <div class="flex justify-between gap-4 rounded-lg border border-default px-4 py-3 sm:block">
-              <dt class="text-muted">Format</dt>
-              <dd class="font-medium text-highlighted uppercase sm:mt-1">{{ state.dataFormat }}</dd>
+              <dt class="text-muted">
+                Format
+              </dt>
+              <dd class="font-medium text-highlighted uppercase sm:mt-1">
+                {{ state.dataFormat }}
+              </dd>
             </div>
             <div class="flex justify-between gap-4 rounded-lg border border-default px-4 py-3 sm:block lg:col-span-2">
-              <dt class="text-muted">Resources</dt>
-              <dd class="font-medium text-highlighted sm:mt-1">{{ state.resourceTypes?.join(', ') }}</dd>
+              <dt class="text-muted">
+                Resources
+              </dt>
+              <dd class="font-medium text-highlighted sm:mt-1">
+                {{ state.resourceTypes?.join(', ') }}
+              </dd>
             </div>
             <div class="flex justify-between gap-4 rounded-lg border border-default px-4 py-3 sm:block">
-              <dt class="text-muted">Environment</dt>
-              <dd class="font-medium text-highlighted capitalize sm:mt-1">{{ state.environment }}</dd>
+              <dt class="text-muted">
+                Environment
+              </dt>
+              <dd class="font-medium text-highlighted capitalize sm:mt-1">
+                {{ state.environment }}
+              </dd>
             </div>
             <div class="flex justify-between gap-4 rounded-lg border border-default px-4 py-3 sm:block">
-              <dt class="text-muted">Volume</dt>
-              <dd class="font-medium text-highlighted sm:mt-1">{{ state.estimatedVolume }}</dd>
+              <dt class="text-muted">
+                Volume
+              </dt>
+              <dd class="font-medium text-highlighted sm:mt-1">
+                {{ state.estimatedVolume }}
+              </dd>
             </div>
           </dl>
         </div>

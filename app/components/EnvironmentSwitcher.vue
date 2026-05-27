@@ -10,7 +10,7 @@ const options = [
 </script>
 
 <template>
-  <div class="flex items-center rounded-lg border border-default p-0.5 bg-elevated">
+  <div class="flex items-center rounded-lg border border-default bg-accented/60 p-0.5">
     <UButton
       v-for="option in options"
       :key="option.value"

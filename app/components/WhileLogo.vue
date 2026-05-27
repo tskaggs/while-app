@@ -1,29 +1,23 @@
 <script setup lang="ts">
 defineProps<{
-  collapsed?: boolean
+  compact?: boolean
 }>()
 </script>
 
 <template>
   <NuxtLink
     to="/"
-    class="flex items-center rounded-md px-2 py-2 transition-colors hover:bg-elevated/60"
-    :class="collapsed ? 'justify-center' : ''"
+    class="flex items-center gap-2 rounded-md px-1 py-1 transition-colors hover:opacity-90"
   >
     <span
-      v-if="collapsed"
-      class="font-serif text-xl leading-none text-highlighted"
+      class="size-2 rotate-45 rounded-[2px] bg-primary shrink-0"
+      aria-hidden="true"
+    />
+    <span
+      v-if="!compact"
+      class="text-sm font-semibold tracking-tight text-highlighted"
     >
-      W
-    </span>
-
-    <span v-else class="inline-flex flex-col gap-1.5">
-      <span class="font-serif text-[1.35rem] leading-none tracking-tight text-highlighted">
-        While
-      </span>
-      <span
-        class="h-px w-11 rounded-full while-logo-underline"
-      />
+      While
     </span>
   </NuxtLink>
 </template>

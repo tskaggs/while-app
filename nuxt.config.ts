@@ -9,8 +9,17 @@ export default defineNuxtConfig({
     '@vueuse/nuxt'
   ],
 
+  devtools: {
+    enabled: true
+  },
+
+  css: ['~/assets/css/main.css'],
+
   colorMode: {
-    preference: 'light'
+    preference: 'dark',
+    fallback: 'dark',
+    storage: 'localStorage',
+    storageKey: 'while-color-mode-locked'
   },
 
   content: {
@@ -23,11 +32,15 @@ export default defineNuxtConfig({
     }
   },
 
-  devtools: {
-    enabled: true
+  build: {
+    transpile: ['@unovis/vue', '@unovis/ts']
   },
 
-  css: ['~/assets/css/main.css'],
+  routeRules: {
+    '/docs/**': { prerender: true }
+  },
+
+  compatibilityDate: '2024-07-11',
 
   vite: {
     resolve: {
@@ -48,16 +61,6 @@ export default defineNuxtConfig({
       needsInterop: ['striptags']
     }
   },
-
-  build: {
-    transpile: ['@unovis/vue', '@unovis/ts']
-  },
-
-  routeRules: {
-    '/docs/**': { prerender: true }
-  },
-
-  compatibilityDate: '2024-07-11',
 
   eslint: {
     config: {

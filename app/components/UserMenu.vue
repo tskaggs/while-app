@@ -5,8 +5,6 @@ defineProps<{
   collapsed?: boolean
 }>()
 
-const colorMode = useColorMode()
-
 const user = ref({
   name: 'Sarah Chen',
   avatar: {
@@ -24,37 +22,6 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   icon: 'i-lucide-settings',
   to: '/settings'
 }], [{
-  label: 'Appearance',
-  icon: 'i-lucide-sun-moon',
-  children: [{
-    label: 'Light',
-    icon: 'i-lucide-sun',
-    type: 'checkbox',
-    checked: colorMode.value === 'light',
-    onSelect(e: Event) {
-      e.preventDefault()
-      colorMode.preference = 'light'
-    }
-  }, {
-    label: 'Dark',
-    icon: 'i-lucide-moon',
-    type: 'checkbox',
-    checked: colorMode.value === 'dark',
-    onSelect(e: Event) {
-      e.preventDefault()
-      colorMode.preference = 'dark'
-    }
-  }, {
-    label: 'System',
-    icon: 'i-lucide-monitor',
-    type: 'checkbox',
-    checked: colorMode.preference === 'system',
-    onSelect(e: Event) {
-      e.preventDefault()
-      colorMode.preference = 'system'
-    }
-  }]
-}], [{
   label: 'Log out',
   icon: 'i-lucide-log-out'
 }]]))
@@ -63,23 +30,16 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
 <template>
   <UDropdownMenu
     :items="items"
-    :content="{ align: 'center', collisionPadding: 12 }"
-    :ui="{ content: collapsed ? 'w-48' : 'w-(--reka-dropdown-menu-trigger-width)' }"
+    :content="{ align: 'end', collisionPadding: 12 }"
+    :ui="{ content: collapsed ? 'w-48' : 'w-48' }"
   >
     <UButton
-      v-bind="{
-        ...user,
-        label: collapsed ? undefined : user?.name,
-        trailingIcon: collapsed ? undefined : 'i-lucide-chevrons-up-down'
-      }"
+      :avatar="user.avatar"
+      :label="collapsed ? undefined : undefined"
       color="neutral"
       variant="ghost"
-      block
-      :square="collapsed"
-      class="data-[state=open]:bg-elevated"
-      :ui="{
-        trailingIcon: 'text-dimmed'
-      }"
+      :square="true"
+      class="data-[state=open]:bg-elevated rounded-full"
     />
   </UDropdownMenu>
 </template>

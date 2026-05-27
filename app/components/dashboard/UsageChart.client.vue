@@ -1,32 +1,66 @@
 <script setup lang="ts">
 import {
-  VisArea,
   VisAxis,
   VisCrosshair,
   VisLine,
   VisTooltip,
-  VisXYContainer
+  VisXYContainer,
+  getChartColor
 } from '~/utils/unovis'
 import { buildChartTooltipHtml, formatChartTooltipDateUtc } from '~/utils/chartTooltip'
+import type { UsageDataPoint } from '~/types/while'
 
 const cardRef = useTemplateRef<HTMLElement | null>('cardRef')
 const { chartData } = useUsageMetrics()
+const { connections } = useConnections()
+const { enrichPoints } = useOverviewChart()
 const { width } = useElementSize(cardRef)
 
-type DataRecord = {
-  date: string
-  messages: number
-  fhirResources: number
+type DataRecord = UsageDataPoint
+
+type Timeframe = '1D' | '1W' | '1M' | '3M' | '1Y' | 'All'
+
+const timeframe = ref<Timeframe>('1M')
+const timeframeOptions: Timeframe[] = ['1D', '1W', '1M', '3M', '1Y', 'All']
+
+const sliceByTimeframe: Record<Timeframe, number> = {
+  '1D': 1,
+  '1W': 7,
+  '1M': 14,
+  '3M': 14,
+  '1Y': 14,
+  'All': 14
 }
 
-const data = computed<DataRecord[]>(() => chartData.value)
+const rawData = computed<DataRecord[]>(() => chartData.value)
+
+const data = computed<DataRecord[]>(() => {
+  const n = sliceByTimeframe[timeframe.value]
+  const slice = rawData.value.slice(-n)
+  return enrichPoints(slice)
+})
+
+const chartSeries = computed(() =>
+  connections.value.map((connection, index) => ({
+    id: connection.id,
+    label: connection.partnerName,
+    color: getChartColor(index)
+  }))
+)
 
 const x = (_: DataRecord, i: number) => i
-const yMessages = (d: DataRecord) => d.messages
-const yFhir = (d: DataRecord) => d.fhirResources
+
+const yAccessors = computed(() =>
+  chartSeries.value.map(series => (d: DataRecord) => d.byConnection[series.id] ?? 0)
+)
 
 const totalMessages = computed(() => data.value.reduce((acc, { messages }) => acc + messages, 0))
-const totalFhir = computed(() => data.value.reduce((acc, { fhirResources }) => acc + fhirResources, 0))
+
+const averageUptime = computed(() => {
+  if (!data.value.length) return 0
+  const sum = data.value.reduce((acc, { uptime }) => acc + uptime, 0)
+  return Math.round((sum / data.value.length) * 10) / 10
+})
 
 const formatNumber = new Intl.NumberFormat('en').format
 
@@ -39,80 +73,111 @@ const xTicks = (i: number) => {
   return formatDate(data.value[i].date)
 }
 
-const series = [
-  { label: 'Messages', color: 'var(--color-while-600)' },
-  { label: 'FHIR Resources', color: 'var(--color-while-400)' }
-] as const
+const chartPadding = { top: 24, left: 8, right: 16, bottom: 8 }
 
 const template = (d: DataRecord) => {
-  const values = [formatNumber(d.messages), formatNumber(d.fhirResources)]
+  const items = chartSeries.value.map(series => ({
+    label: series.label,
+    value: formatNumber(d.byConnection[series.id] ?? 0),
+    color: series.color
+  }))
+
+  items.push({
+    label: 'Total',
+    value: formatNumber(d.messages),
+    color: '#FAFAFA'
+  })
 
   return buildChartTooltipHtml(
     formatChartTooltipDateUtc(`${d.date}T00:00:00.000Z`),
-    series.map((item, index) => ({
-      label: item.label,
-      value: values[index]!,
-      color: item.color
-    }))
+    items
   )
 }
 </script>
 
 <template>
-  <UCard ref="cardRef" :ui="{ root: 'overflow-visible', body: 'px-0! pt-0! pb-3!' }">
-    <template #header>
-      <div class="flex items-start justify-between">
-        <div>
-          <p class="text-xs text-muted uppercase mb-1.5">
-            Message Throughput
-          </p>
-          <p class="text-3xl text-highlighted font-semibold">
+  <div
+    ref="cardRef"
+    class="flex h-full min-h-0 flex-col overflow-visible rounded-xl bg-while-900 p-5 ring-1 ring-while-800/80"
+  >
+    <div class="flex items-start justify-between gap-4 shrink-0">
+      <div class="min-w-0 flex-1">
+        <p class="text-xs font-medium uppercase tracking-wide text-white/60">
+          Message throughput
+        </p>
+        <div class="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <p class="text-3xl font-semibold tabular-nums text-white">
             {{ formatNumber(totalMessages) }}
           </p>
-          <p class="text-xs text-muted mt-1">Last 14 days</p>
+          <p class="text-sm tabular-nums text-white/55">
+            {{ averageUptime }}% avg uptime
+          </p>
         </div>
-        <div class="text-right">
-          <p class="text-xs text-muted uppercase mb-1.5">
-            FHIR Resources
-          </p>
-          <p class="text-xl text-highlighted font-semibold">
-            {{ formatNumber(totalFhir) }}
-          </p>
-          <div class="flex items-center justify-end gap-3 mt-2 text-xs text-muted">
-            <span class="flex items-center gap-1">
-              <span class="size-2 rounded-full bg-primary ring-1 ring-inset ring-default" />
-              Messages
-            </span>
-            <span class="flex items-center gap-1">
-              <span class="size-2 rounded-full bg-success ring-1 ring-inset ring-default" />
-              FHIR
-            </span>
-          </div>
+        <p class="mt-0.5 text-xs text-white/50">
+          {{ timeframe }} · {{ data.length }} day{{ data.length === 1 ? '' : 's' }} · by connection
+        </p>
+        <div
+          v-if="chartSeries.length"
+          class="mt-2 flex flex-wrap gap-x-3 gap-y-1"
+        >
+          <span
+            v-for="series in chartSeries"
+            :key="series.id"
+            class="inline-flex max-w-[10rem] items-center gap-1.5 text-[10px] text-white/55"
+          >
+            <span
+              class="size-2 shrink-0 rounded-full ring-1 ring-inset ring-white/20"
+              :style="{ backgroundColor: series.color }"
+            />
+            <span class="truncate">{{ series.label }}</span>
+          </span>
         </div>
       </div>
-    </template>
+      <div class="flex shrink-0 gap-1 text-xs">
+        <button
+          v-for="option in timeframeOptions"
+          :key="option"
+          type="button"
+          class="px-2 py-1 rounded-md transition-colors"
+          :class="timeframe === option
+            ? 'text-white underline underline-offset-4 decoration-white/80'
+            : 'text-white/45 hover:text-white/70'"
+          @click="timeframe = option"
+        >
+          {{ option }}
+        </button>
+      </div>
+    </div>
 
-    <VisXYContainer
-      :data="data"
-      :padding="{ top: 40, left: 8, right: 16 }"
-      class="while-unovis-chart h-96"
-      :width="width"
-    >
-      <VisLine :x="x" :y="yMessages" color="var(--color-while-600)" />
-      <VisArea :x="x" :y="yMessages" color="var(--color-while-500)" :opacity="0.12" />
-      <VisLine :x="x" :y="yFhir" color="var(--color-while-400)" :line-width="2" />
-      <VisAxis
-        type="x"
-        :x="x"
-        :tick-format="xTicks"
-        :grid-line="false"
-      />
-      <VisAxis
-        type="y"
-        :grid-line="true"
-      />
-      <VisCrosshair color="var(--color-while-500)" :template="template" />
-      <VisTooltip />
-    </VisXYContainer>
-  </UCard>
+    <div class="mt-4 min-h-72 flex-1">
+      <VisXYContainer
+        :data="data"
+        :padding="chartPadding"
+        class="while-unovis-chart while-unovis-chart--hero h-full min-h-72"
+        :width="width"
+      >
+        <VisLine
+          v-for="(accessor, index) in yAccessors"
+          :key="chartSeries[index]?.id ?? index"
+          :x="x"
+          :y="accessor"
+          :color="chartSeries[index]?.color"
+          :line-width="2"
+        />
+        <VisAxis
+          type="x"
+          :x="x"
+          :tick-format="xTicks"
+          :grid-line="false"
+        />
+        <VisAxis
+          type="y"
+          :grid-line="true"
+          :num-ticks="4"
+        />
+        <VisCrosshair color="rgb(250 250 250 / 0.6)" :template="template" />
+        <VisTooltip />
+      </VisXYContainer>
+    </div>
+  </div>
 </template>

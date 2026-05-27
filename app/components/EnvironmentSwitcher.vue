@@ -4,8 +4,8 @@ import type { WhileEnvironment } from '~/types/while'
 const { environment, setEnvironment } = useEnvironment()
 
 const options = [
-  { label: 'Sandbox', value: 'sandbox' as WhileEnvironment, icon: 'i-lucide-flask-conical' },
-  { label: 'Live', value: 'live' as WhileEnvironment, icon: 'i-lucide-shield-check' }
+  { label: 'Sandbox', value: 'sandbox' as WhileEnvironment, icon: 'i-iconoir-flask' },
+  { label: 'Live', value: 'live' as WhileEnvironment, icon: 'i-iconoir-shield-check' }
 ]
 </script>
 

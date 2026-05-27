@@ -149,15 +149,21 @@ function buildUptimeChart(
 
 const _useTunnelUptime = () => {
   const { environment } = useEnvironment()
-  const { connections } = useConnections()
+  const { connections, operationalConnections, isLive } = useConnections()
 
-  const tunnelLogs = computed(() =>
-    environment.value === 'sandbox' ? sandboxTunnelLogs : liveTunnelLogs
-  )
+  const tunnelLogs = computed(() => {
+    const base = environment.value === 'sandbox' ? sandboxTunnelLogs : liveTunnelLogs
+    if (!isLive.value) return base
+    const allowed = new Set(operationalConnections.value.map(c => c.id))
+    return base.filter(log => allowed.has(log.connectionId))
+  })
 
-  const incidents = computed(() =>
-    environment.value === 'sandbox' ? sandboxIncidents : liveIncidents
-  )
+  const incidents = computed(() => {
+    const base = environment.value === 'sandbox' ? sandboxIncidents : liveIncidents
+    if (!isLive.value) return base
+    const allowed = new Set(operationalConnections.value.map(c => c.id))
+    return base.filter(inc => allowed.has(inc.connectionId))
+  })
 
   const incidentMessages = computed(() =>
     environment.value === 'sandbox' ? sandboxIncidentMessages : liveIncidentMessages

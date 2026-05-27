@@ -7,7 +7,7 @@ import type {
 } from '~/types/while'
 
 const { filterMessages, buildHistogram } = useMessages()
-const { connections } = useConnections()
+const { connections, operationalConnections, isLive } = useConnections()
 
 const selectedDate = ref('2026-05-20')
 const granularity = ref<MessageGranularity>('hour')
@@ -61,13 +61,16 @@ const hourOptions = computed(() => [
   }))
 ])
 
-const connectionOptions = computed(() => [
-  { label: 'All connections', value: undefined },
-  ...connections.value.map(connection => ({
-    label: connection.partnerName,
-    value: connection.id
-  }))
-])
+const connectionOptions = computed(() => {
+  const list = isLive.value ? operationalConnections.value : connections.value
+  return [
+    { label: 'All connections', value: undefined },
+    ...list.map(connection => ({
+      label: connection.partnerName,
+      value: connection.id
+    }))
+  ]
+})
 
 const directionOptions = [
   { label: 'All directions', value: undefined },
@@ -108,6 +111,7 @@ function openMessageDetail(message: ReturnType<typeof filterMessages>[number]) {
 </script>
 
 <template>
+  <LiveViewGate>
   <div class="space-y-6">
     <PageHeader title="Messages">
       <template #filters>
@@ -161,7 +165,7 @@ function openMessageDetail(message: ReturnType<typeof filterMessages>[number]) {
         />
         <UInput
           v-model="search"
-          icon="i-lucide-search"
+          icon="i-iconoir-search"
           placeholder="Search messages..."
           class="w-full sm:w-56"
         />
@@ -223,4 +227,5 @@ function openMessageDetail(message: ReturnType<typeof filterMessages>[number]) {
       </template>
     </USlideover>
   </div>
+  </LiveViewGate>
 </template>

@@ -82,11 +82,11 @@ function onSubmitted(key: string) {
 const newRequestItems = [
   [{
     label: 'Support ticket',
-    icon: 'i-lucide-headphones',
+    icon: 'i-iconoir-headset',
     onSelect: () => openCompose('ticket')
   }, {
     label: 'New connection',
-    icon: 'i-lucide-network',
+    icon: 'i-iconoir-network',
     onSelect: () => openCompose('connection')
   }]
 ]
@@ -102,7 +102,7 @@ const newRequestItems = [
         <UDropdownMenu :items="newRequestItems">
           <UButton
             label="New request"
-            icon="i-lucide-plus"
+            icon="i-iconoir-plus"
             size="sm"
           />
         </UDropdownMenu>
@@ -110,7 +110,7 @@ const newRequestItems = [
       <template #filters>
         <UInput
           v-model="search"
-          icon="i-lucide-search"
+          icon="i-iconoir-search"
           placeholder="Search requests..."
           class="w-full sm:w-56"
         />
@@ -172,7 +172,7 @@ const newRequestItems = [
               </p>
             </div>
             <UButton
-              icon="i-lucide-x"
+              icon="i-iconoir-xmark"
               color="neutral"
               variant="ghost"
               size="sm"
@@ -199,7 +199,7 @@ const newRequestItems = [
           v-else
           class="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-16 text-center"
         >
-          <UIcon name="i-lucide-inbox" class="size-12 text-dimmed" />
+          <UIcon name="i-iconoir-mail-in" class="size-12 text-dimmed" />
           <div>
             <p class="font-medium text-highlighted">
               Select a request
@@ -211,7 +211,7 @@ const newRequestItems = [
           <div class="flex flex-wrap justify-center gap-2">
             <UButton
               label="New ticket"
-              icon="i-lucide-headphones"
+              icon="i-iconoir-headset"
               color="neutral"
               variant="outline"
               size="sm"
@@ -219,7 +219,7 @@ const newRequestItems = [
             />
             <UButton
               label="New connection"
-              icon="i-lucide-network"
+              icon="i-iconoir-network"
               size="sm"
               @click="openCompose('connection')"
             />

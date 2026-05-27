@@ -20,7 +20,7 @@ const mappings = [
     <template #header>
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-git-compare-arrows" class="size-5 text-primary" />
+          <UIcon name="i-iconoir-git-compare" class="size-5 text-primary" />
           <h3 class="font-semibold text-highlighted">HL7 → FHIR Mapping</h3>
         </div>
         <UBadge color="info" variant="subtle">AI-assisted</UBadge>
@@ -56,8 +56,8 @@ const mappings = [
     </UTable>
 
     <div class="mt-4 flex gap-2">
-      <UButton label="AI Suggest Mapping" icon="i-lucide-sparkles" color="neutral" variant="outline" disabled />
-      <UButton label="Export Template" icon="i-lucide-download" color="neutral" variant="ghost" disabled />
+      <UButton label="AI Suggest Mapping" icon="i-iconoir-spark" color="neutral" variant="outline" disabled />
+      <UButton label="Export Template" icon="i-iconoir-download" color="neutral" variant="ghost" disabled />
     </div>
   </UCard>
 </template>

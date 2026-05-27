@@ -3,39 +3,39 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 const links: NavigationMenuItem[] = [{
   label: 'Overview',
-  icon: 'i-lucide-layout-dashboard',
+  icon: 'i-iconoir-dashboard',
   to: '/'
 }, {
   label: 'Connections',
-  icon: 'i-lucide-network',
+  icon: 'i-iconoir-network',
   to: '/connections'
 }, {
   label: 'Messages',
-  icon: 'i-lucide-activity',
+  icon: 'i-iconoir-activity',
   to: '/messages'
 }, {
   label: 'Tunnel Uptime',
-  icon: 'i-lucide-shield-check',
+  icon: 'i-iconoir-shield-check',
   to: '/uptime'
 }, {
   label: 'Logs',
-  icon: 'i-lucide-terminal',
+  icon: 'i-iconoir-terminal',
   to: '/logs'
 }, {
   label: 'Compliance',
-  icon: 'i-lucide-shield-check',
+  icon: 'i-iconoir-shield-check',
   to: '/compliance'
 }, {
   label: 'Developer Docs',
-  icon: 'i-lucide-book-open',
+  icon: 'i-iconoir-open-book',
   to: '/docs'
 }, {
   label: 'Support',
-  icon: 'i-lucide-headphones',
+  icon: 'i-iconoir-headset',
   to: '/support'
 }, {
   label: 'Settings',
-  icon: 'i-lucide-settings',
+  icon: 'i-iconoir-settings',
   to: '/settings'
 }]
 

@@ -41,7 +41,7 @@ const _useEnvironment = () => {
         ? 'Viewing sandbox — mock EHR endpoints, no PHI'
         : 'Viewing live environment — production integrations',
       color: env === 'sandbox' ? 'warning' : 'success',
-      icon: env === 'sandbox' ? 'i-lucide-flask-conical' : 'i-lucide-shield-check'
+      icon: env === 'sandbox' ? 'i-iconoir-flask' : 'i-iconoir-shield-check'
     })
   }
 

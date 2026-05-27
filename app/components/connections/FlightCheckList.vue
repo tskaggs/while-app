@@ -16,7 +16,7 @@ const checks = [
   <UCard>
     <template #header>
       <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-plane-takeoff" class="size-5 text-primary" />
+        <UIcon name="i-iconoir-airplane" class="size-5 text-primary" />
         <h3 class="font-semibold text-highlighted">Flight Check</h3>
       </div>
     </template>
@@ -28,7 +28,7 @@ const checks = [
         class="flex items-start gap-3 rounded-lg border border-default p-3"
       >
         <UIcon
-          :name="flightCheck[check.key] ? 'i-lucide-check-circle' : 'i-lucide-x-circle'"
+          :name="flightCheck[check.key] ? 'i-iconoir-check-circle' : 'i-iconoir-xmark-circle'"
           class="size-5 shrink-0 mt-0.5"
           :class="flightCheck[check.key] ? 'text-success' : 'text-error'"
         />

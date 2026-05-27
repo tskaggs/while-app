@@ -111,6 +111,7 @@ const _useSupportRequests = () => {
       partnerName: form.partnerName,
       ehrVendor: form.ehrVendor,
       environment: form.environment,
+      pairedConnectionId: `conn-pending-pair-${id}`,
       sidecarId: `sidecar-pending-${id.slice(-4)}`,
       tunnelStatus: 'pending',
       wireguardPublicKey: 'Pending provisioning...',
@@ -125,7 +126,7 @@ const _useSupportRequests = () => {
       title: 'Support request submitted',
       description: `Request ${id.toUpperCase()} — our team will reach out within 1 business day.`,
       color: 'success',
-      icon: 'i-lucide-check-circle'
+      icon: 'i-iconoir-check-circle'
     })
 
     return `connection:${id}`
@@ -151,7 +152,7 @@ const _useSupportRequests = () => {
       title: 'Support ticket submitted',
       description: `${categoryLabels[form.category]} ticket ${id.toUpperCase()} — our team will respond within 1 business day.`,
       color: 'success',
-      icon: 'i-lucide-check-circle'
+      icon: 'i-iconoir-check-circle'
     })
 
     return `ticket:${id}`

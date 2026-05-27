@@ -74,7 +74,7 @@ function formatTimestamp(timestamp: string) {
         </p>
         <UIcon
           v-if="row.original.incidentId"
-          name="i-lucide-triangle-alert"
+          name="i-iconoir-warning-triangle"
           class="size-4 shrink-0 text-warning"
         />
       </div>
@@ -82,7 +82,7 @@ function formatTimestamp(timestamp: string) {
 
     <template #empty>
       <div class="flex flex-col items-center gap-3 py-12">
-        <UIcon name="i-lucide-shield-off" class="size-10 text-muted" />
+        <UIcon name="i-iconoir-shield-broken" class="size-10 text-muted" />
         <p class="text-muted">No tunnel logs match your filters.</p>
       </div>
     </template>

@@ -40,6 +40,12 @@ export default defineNuxtConfig({
     '/docs/**': { prerender: true }
   },
 
+  icon: {
+    serverBundle: {
+      collections: ['iconoir', 'simple-icons']
+    }
+  },
+
   compatibilityDate: '2024-07-11',
 
   vite: {

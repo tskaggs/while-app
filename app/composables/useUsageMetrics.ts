@@ -9,7 +9,7 @@ import {
 
 const _useUsageMetrics = () => {
   const { environment } = useEnvironment()
-  const { connections } = useConnections()
+  const { operationalConnections } = useConnections()
 
   const stats = computed(() =>
     environment.value === 'sandbox' ? sandboxUsageStats : liveUsageStats
@@ -17,7 +17,7 @@ const _useUsageMetrics = () => {
 
   const chartData = computed(() => {
     const base = environment.value === 'sandbox' ? sandboxUsageChart : liveUsageChart
-    return attachConnectionBreakdown(base, connections.value)
+    return attachConnectionBreakdown(base, operationalConnections.value)
   })
 
   return { stats, chartData }

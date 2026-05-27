@@ -46,10 +46,10 @@ const state = reactive<Partial<Schema>>({
 })
 
 const steps = [
-  { title: 'Partner Info', icon: 'i-lucide-building-2' },
-  { title: 'Integration Scope', icon: 'i-lucide-layers' },
-  { title: 'Environment', icon: 'i-lucide-settings-2' },
-  { title: 'Review', icon: 'i-lucide-check-circle' }
+  { title: 'Partner Info', icon: 'i-iconoir-building' },
+  { title: 'Integration Scope', icon: 'i-iconoir-multiple-pages' },
+  { title: 'Environment', icon: 'i-iconoir-settings' },
+  { title: 'Review', icon: 'i-iconoir-check-circle' }
 ]
 
 const ehrOptions = ['Epic', 'Cerner', 'Meditech', 'Athena', 'Other']
@@ -265,14 +265,14 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             label="Back"
             color="neutral"
             variant="ghost"
-            icon="i-lucide-arrow-left"
+            icon="i-iconoir-arrow-left"
             @click="prevStep"
           />
           <div v-else />
           <UButton
             v-if="step < steps.length - 1"
             label="Continue"
-            icon="i-lucide-arrow-right"
+            icon="i-iconoir-arrow-right"
             trailing
             @click="nextStep"
           />
@@ -280,7 +280,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             v-else
             type="submit"
             label="Submit Request"
-            icon="i-lucide-send"
+            icon="i-iconoir-send"
           />
         </div>
       </UForm>

@@ -9,21 +9,24 @@ import type { UsageDataPoint } from '~/types/while'
 
 const _useOverviewChart = () => {
   const { environment } = useEnvironment()
-  const { connections } = useConnections()
+  const { operationalConnections, isLive } = useConnections()
 
-  const tunnelLogs = computed(() =>
-    environment.value === 'sandbox' ? sandboxTunnelLogs : liveTunnelLogs
-  )
+  const tunnelLogs = computed(() => {
+    const base = environment.value === 'sandbox' ? sandboxTunnelLogs : liveTunnelLogs
+    if (!isLive.value) return base
+    const allowed = new Set(operationalConnections.value.map(c => c.id))
+    return base.filter(log => allowed.has(log.connectionId))
+  })
 
   function enrichPoints(points: UsageDataPoint[]): UsageDataPoint[] {
     return points.map((point, index) => {
       const bucketStart = `${point.date}T00:00:00.000Z`
       const bucketEndMs = new Date(`${point.date}T23:59:59.999Z`).getTime()
 
-      if (!connections.value.length) return point
+      if (!operationalConnections.value.length) return point
 
       let uptimeSum = 0
-      connections.value.forEach((connection, seed) => {
+      operationalConnections.value.forEach((connection, seed) => {
         const baseline = getConnectionBaseline(connection.tunnelStatus, seed + index)
         uptimeSum += computeUptimePercent(
           tunnelLogs.value,
@@ -34,7 +37,7 @@ const _useOverviewChart = () => {
         )
       })
 
-      const computedUptime = Math.round((uptimeSum / connections.value.length) * 10) / 10
+      const computedUptime = Math.round((uptimeSum / operationalConnections.value.length) * 10) / 10
 
       return {
         ...point,

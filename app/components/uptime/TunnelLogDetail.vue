@@ -73,7 +73,7 @@ function formatTimestamp(timestamp: string) {
           class="text-sm text-primary hover:underline mt-0.5 inline-flex items-center gap-1"
         >
           {{ log.partnerName }}
-          <UIcon name="i-lucide-arrow-up-right" class="size-3.5" />
+          <UIcon name="i-iconoir-arrow-up-right" class="size-3.5" />
         </NuxtLink>
         <p class="text-xs text-muted">{{ log.connectionId }}</p>
       </div>

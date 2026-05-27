@@ -51,14 +51,14 @@ export function attachConnectionBreakdown(
 export const sandboxUsageStats: UsageStat[] = [
   {
     title: 'Active Connections',
-    icon: 'i-lucide-network',
+    icon: 'i-iconoir-network',
     value: 2,
     variation: 0,
     description: 'Tunnels with active handshake'
   },
   {
     title: 'Messages Processed',
-    icon: 'i-lucide-activity',
+    icon: 'i-iconoir-activity',
     value: '2,096',
     variation: 12,
     description: 'Last 24 hours',
@@ -66,7 +66,7 @@ export const sandboxUsageStats: UsageStat[] = [
   },
   {
     title: 'Tunnel Uptime',
-    icon: 'i-lucide-shield-check',
+    icon: 'i-iconoir-shield-check',
     value: '99.2%',
     variation: 0.3,
     description: 'Rolling 30-day average',
@@ -74,7 +74,7 @@ export const sandboxUsageStats: UsageStat[] = [
   },
   {
     title: 'Pending Requests',
-    icon: 'i-lucide-clock',
+    icon: 'i-iconoir-clock',
     value: 1,
     variation: -25,
     description: 'Partner onboarding in progress'
@@ -84,22 +84,22 @@ export const sandboxUsageStats: UsageStat[] = [
 export const liveUsageStats: UsageStat[] = [
   {
     title: 'Active Connections',
-    icon: 'i-lucide-network',
-    value: 2,
-    variation: 50,
-    description: 'Tunnels with active handshake'
+    icon: 'i-iconoir-network',
+    value: 1,
+    variation: 0,
+    description: 'Live activated with active tunnel'
   },
   {
     title: 'Messages Processed',
-    icon: 'i-lucide-activity',
-    value: '8,390',
+    icon: 'i-iconoir-activity',
+    value: '4,820',
     variation: 8,
-    description: 'Last 24 hours',
+    description: 'Last 24 hours (activated Live only)',
     to: '/messages'
   },
   {
     title: 'Tunnel Uptime',
-    icon: 'i-lucide-shield-check',
+    icon: 'i-iconoir-shield-check',
     value: '99.8%',
     variation: 0.1,
     description: 'Rolling 30-day average',
@@ -107,7 +107,7 @@ export const liveUsageStats: UsageStat[] = [
   },
   {
     title: 'Pending Requests',
-    icon: 'i-lucide-clock',
+    icon: 'i-iconoir-clock',
     value: 2,
     variation: 100,
     description: 'Partner onboarding in progress'

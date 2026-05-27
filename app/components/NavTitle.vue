@@ -13,7 +13,7 @@ const showBack = computed(() => canGoBack.value && route.path !== '/')
   <div class="flex items-center gap-3 min-w-0">
     <UButton
       v-if="showBack"
-      icon="i-lucide-arrow-left"
+      icon="i-iconoir-arrow-left"
       color="neutral"
       variant="ghost"
       size="sm"

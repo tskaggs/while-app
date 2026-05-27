@@ -35,13 +35,14 @@ useSeoMeta({ title: 'Connections' })
 </script>
 
 <template>
+  <LiveViewGate>
   <div class="space-y-6">
     <PageHeader title="Connections">
       <template #actions>
         <UButton
           to="/support?compose=connection"
           label="New Connection"
-          icon="i-lucide-plus"
+          icon="i-iconoir-plus"
           size="sm"
         />
       </template>
@@ -68,4 +69,5 @@ useSeoMeta({ title: 'Connections' })
 
     <ConnectionsConnectionTable :connections="filtered" />
   </div>
+  </LiveViewGate>
 </template>

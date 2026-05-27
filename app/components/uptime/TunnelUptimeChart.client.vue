@@ -97,7 +97,7 @@ const template = (d: ChartRow) => {
     </template>
 
     <div v-if="!data.length || !connections.length" class="flex flex-col items-center gap-2 py-16 text-muted">
-      <UIcon name="i-lucide-line-chart" class="size-8" />
+      <UIcon name="i-iconoir-graph-up" class="size-8" />
       <p class="text-sm">No uptime data for the selected filters.</p>
     </div>
 

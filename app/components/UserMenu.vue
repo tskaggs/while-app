@@ -8,20 +8,16 @@ defineProps<{
 const colorMode = useColorMode()
 
 const user = ref({
-  name: 'Sarah Chen',
-  avatar: {
-    src: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-    alt: 'Sarah Chen'
-  }
+  name: 'Sarah Chen'
 })
 
 const items = computed<DropdownMenuItem[][]>(() => ([[{
   type: 'label',
   label: user.value.name,
-  avatar: user.value.avatar
+  icon: 'i-iconoir-user-circle'
 }], [{
   label: 'Light',
-  icon: 'i-lucide-sun',
+  icon: 'i-iconoir-sun-light',
   type: 'checkbox',
   checked: colorMode.preference === 'light',
   onSelect(e: Event) {
@@ -30,7 +26,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   }
 }, {
   label: 'Dark',
-  icon: 'i-lucide-moon',
+  icon: 'i-iconoir-half-moon',
   type: 'checkbox',
   checked: colorMode.preference === 'dark',
   onSelect(e: Event) {
@@ -39,7 +35,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   }
 }, {
   label: 'System',
-  icon: 'i-lucide-monitor',
+  icon: 'i-iconoir-computer',
   type: 'checkbox',
   checked: colorMode.preference === 'system',
   onSelect(e: Event) {
@@ -48,11 +44,11 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   }
 }], [{
   label: 'Settings',
-  icon: 'i-lucide-settings',
+  icon: 'i-iconoir-settings',
   to: '/settings'
 }], [{
   label: 'Log out',
-  icon: 'i-lucide-log-out'
+  icon: 'i-iconoir-log-out'
 }]]))
 </script>
 
@@ -63,12 +59,12 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
     :ui="{ content: collapsed ? 'w-48' : 'w-48' }"
   >
     <UButton
-      :avatar="user.avatar"
-      :label="collapsed ? undefined : undefined"
+      icon="i-iconoir-profile-circle"
       color="neutral"
       variant="ghost"
       :square="true"
       class="data-[state=open]:bg-elevated rounded-full"
+      aria-label="User menu"
     />
   </UDropdownMenu>
 </template>

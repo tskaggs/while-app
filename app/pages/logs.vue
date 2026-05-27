@@ -7,7 +7,7 @@ import {
 } from '~/composables/useLogs'
 
 const { anonymize, filterLogs, resourceTypeOptions } = useLogs()
-const { connections } = useConnections()
+const { connections, operationalConnections, isLive } = useConnections()
 
 const categoryFilter = ref<LogCategory | undefined>()
 const severityFilter = ref<LogSeverity | undefined>()
@@ -20,13 +20,16 @@ const pageSize = 20
 const detailOpen = ref(false)
 const selectedLog = ref<ReturnType<typeof filterLogs>[number] | null>(null)
 
-const connectionOptions = computed(() => [
-  { label: 'All connections', value: undefined },
-  ...connections.value.map(c => ({
-    label: c.partnerName,
-    value: c.id
-  }))
-])
+const connectionOptions = computed(() => {
+  const list = isLive.value ? operationalConnections.value : connections.value
+  return [
+    { label: 'All connections', value: undefined },
+    ...list.map(c => ({
+      label: c.partnerName,
+      value: c.id
+    }))
+  ]
+})
 
 const filteredLogs = computed(() =>
   filterLogs({
@@ -57,6 +60,7 @@ useSeoMeta({ title: 'Logs' })
 </script>
 
 <template>
+  <LiveViewGate>
   <div class="space-y-6">
     <PageHeader
       title="Integration Logs"
@@ -99,12 +103,12 @@ useSeoMeta({ title: 'Logs' })
         />
         <UInput
           v-model="search"
-          icon="i-lucide-search"
+          icon="i-iconoir-search"
           placeholder="Search logs..."
           class="w-full sm:w-56"
         />
         <UButton
-          :icon="anonymize ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+          :icon="anonymize ? 'i-iconoir-eye-off' : 'i-iconoir-eye'"
           :label="anonymize ? 'PHI anonymized' : 'PHI visible'"
           color="neutral"
           variant="outline"
@@ -156,4 +160,5 @@ useSeoMeta({ title: 'Logs' })
       </template>
     </USlideover>
   </div>
+  </LiveViewGate>
 </template>

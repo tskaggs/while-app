@@ -109,7 +109,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       </UFormField>
 
       <div class="flex justify-end pt-2">
-        <UButton type="submit" label="Submit Ticket" icon="i-lucide-send" />
+        <UButton type="submit" label="Submit Ticket" icon="i-iconoir-send" />
       </div>
     </UForm>
   </UCard>

@@ -3,13 +3,14 @@ useSeoMeta({ title: 'Overview' })
 </script>
 
 <template>
+  <LiveViewGate>
   <div class="space-y-6">
     <PageHeader title="Overview">
       <template #actions>
         <UButton
           to="/support"
           label="Support"
-          icon="i-lucide-plus"
+          icon="i-iconoir-plus"
           size="sm"
         />
       </template>
@@ -26,4 +27,5 @@ useSeoMeta({ title: 'Overview' })
 
     <DashboardConnectionWatchlist />
   </div>
+  </LiveViewGate>
 </template>

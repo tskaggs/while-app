@@ -5,9 +5,9 @@ const toast = useToast()
 const baaConfig = computed(() => {
   const status = compliance.value.baaStatus
   return {
-    signed: { color: 'success' as const, label: 'Signed', icon: 'i-lucide-check-circle' },
-    pending: { color: 'warning' as const, label: 'Pending Signature', icon: 'i-lucide-clock' },
-    expired: { color: 'error' as const, label: 'Expired', icon: 'i-lucide-alert-triangle' }
+    signed: { color: 'success' as const, label: 'Signed', icon: 'i-iconoir-check-circle' },
+    pending: { color: 'warning' as const, label: 'Pending Signature', icon: 'i-iconoir-clock' },
+    expired: { color: 'error' as const, label: 'Expired', icon: 'i-iconoir-warning-triangle' }
   }[status]
 })
 
@@ -15,7 +15,7 @@ function downloadBaa() {
   toast.add({
     title: 'BAA download started',
     description: 'Business Associate Agreement PDF is being generated.',
-    icon: 'i-lucide-download'
+    icon: 'i-iconoir-download'
   })
 }
 
@@ -23,7 +23,7 @@ function generateAuditReport() {
   toast.add({
     title: 'Audit report generated',
     description: 'Site Security Target report downloaded as PDF.',
-    icon: 'i-lucide-file-check'
+    icon: 'i-iconoir-clipboard-check'
   })
 }
 
@@ -39,7 +39,7 @@ function formatDate(date?: string) {
       <template #header>
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-file-signature" class="size-5 text-primary" />
+            <UIcon name="i-iconoir-edit-pencil" class="size-5 text-primary" />
             <h3 class="font-semibold text-highlighted">Business Associate Agreement</h3>
           </div>
           <UBadge :color="baaConfig.color" variant="subtle" class="gap-1">
@@ -59,7 +59,7 @@ function formatDate(date?: string) {
           <p class="text-sm text-highlighted">{{ formatDate(compliance.baaExpiresAt) }}</p>
         </div>
         <div class="flex items-end">
-          <UButton label="Download BAA" icon="i-lucide-download" color="neutral" variant="outline" @click="downloadBaa" />
+          <UButton label="Download BAA" icon="i-iconoir-download" color="neutral" variant="outline" @click="downloadBaa" />
         </div>
       </div>
     </UCard>
@@ -68,10 +68,10 @@ function formatDate(date?: string) {
       <template #header>
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-shield-check" class="size-5 text-primary" />
+            <UIcon name="i-iconoir-shield-check" class="size-5 text-primary" />
             <h3 class="font-semibold text-highlighted">Compliance Checklist</h3>
           </div>
-          <UButton label="Generate Audit Report" icon="i-lucide-file-check" size="sm" @click="generateAuditReport" />
+          <UButton label="Generate Audit Report" icon="i-iconoir-clipboard-check" size="sm" @click="generateAuditReport" />
         </div>
       </template>
 
@@ -82,7 +82,7 @@ function formatDate(date?: string) {
           class="flex items-start gap-3 rounded-lg border border-default p-3"
         >
           <UIcon
-            :name="item.status === 'pass' ? 'i-lucide-check-circle' : item.status === 'pending' ? 'i-lucide-clock' : 'i-lucide-x-circle'"
+            :name="item.status === 'pass' ? 'i-iconoir-check-circle' : item.status === 'pending' ? 'i-iconoir-clock' : 'i-iconoir-xmark-circle'"
             class="size-5 shrink-0 mt-0.5"
             :class="item.status === 'pass' ? 'text-success' : item.status === 'pending' ? 'text-warning' : 'text-error'"
           />
@@ -104,7 +104,7 @@ function formatDate(date?: string) {
     <UCard>
       <template #header>
         <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-scroll-text" class="size-5 text-primary" />
+          <UIcon name="i-iconoir-journal-page" class="size-5 text-primary" />
           <h3 class="font-semibold text-highlighted">Audit Log</h3>
         </div>
         <p class="text-sm text-muted mt-1">Control plane access only — no PHI recorded.</p>

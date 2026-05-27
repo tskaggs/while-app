@@ -6,9 +6,9 @@ defineProps<{
 }>()
 
 const config: Record<TunnelStatus, { label: string, color: 'success' | 'warning' | 'error', icon: string }> = {
-  active: { label: 'Active', color: 'success', icon: 'i-lucide-check-circle' },
-  pending: { label: 'Pending', color: 'warning', icon: 'i-lucide-clock' },
-  error: { label: 'Error', color: 'error', icon: 'i-lucide-x-circle' }
+  active: { label: 'Active', color: 'success', icon: 'i-iconoir-check-circle' },
+  pending: { label: 'Pending', color: 'warning', icon: 'i-iconoir-clock' },
+  error: { label: 'Error', color: 'error', icon: 'i-iconoir-xmark-circle' }
 }
 </script>
 

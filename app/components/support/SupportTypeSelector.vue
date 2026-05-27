@@ -5,13 +5,13 @@ const options = [
   {
     title: 'Support Ticket',
     description: 'Get help with billing, a connection issue, or a general question.',
-    icon: 'i-lucide-headphones',
+    icon: 'i-iconoir-headset',
     to: '/support/ticket'
   },
   {
     title: 'New Connection',
     description: 'Onboard a new healthcare partner with WireGuard setup, EHR mapping, and compliance review.',
-    icon: 'i-lucide-network',
+    icon: 'i-iconoir-network',
     to: '/support/new-connection'
   }
 ] as const

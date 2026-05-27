@@ -24,7 +24,7 @@ const { data: navigation } = await useAsyncData('docs-nav', () =>
             class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold text-highlighted transition-colors hover:bg-accented/50"
             :class="collapsed ? 'justify-center' : ''"
           >
-            <UIcon name="i-lucide-book-open" class="size-4 shrink-0 text-primary" />
+            <UIcon name="i-iconoir-open-book" class="size-4 shrink-0 text-primary" />
             <span v-if="!collapsed">Developer Docs</span>
           </NuxtLink>
         </template>
@@ -42,7 +42,7 @@ const { data: navigation } = await useAsyncData('docs-nav', () =>
           <UButton
             to="/"
             :label="collapsed ? undefined : 'Back to Dashboard'"
-            icon="i-lucide-arrow-left"
+            icon="i-iconoir-arrow-left"
             color="neutral"
             variant="ghost"
             :square="collapsed"

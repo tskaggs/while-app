@@ -71,7 +71,7 @@ function formatDate(date: string) {
             color="neutral"
             variant="ghost"
             size="xs"
-            icon="i-lucide-plus"
+            icon="i-iconoir-plus"
           />
         </div>
       </template>
@@ -82,7 +82,7 @@ function formatDate(date: string) {
           :key="req.id"
           class="flex items-center gap-3 rounded-lg border border-default p-3"
         >
-          <UIcon name="i-lucide-headphones" class="size-5 text-primary shrink-0" />
+          <UIcon name="i-iconoir-headset" class="size-5 text-primary shrink-0" />
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-highlighted truncate">
               {{ req.partnerName }}

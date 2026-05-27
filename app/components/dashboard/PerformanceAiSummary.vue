@@ -22,7 +22,7 @@ const generatedAt = computed(() =>
 <template>
   <div class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-primary/25 bg-elevated ring-1 ring-default">
     <div class="flex shrink-0 items-center gap-2 border-b border-primary/15 bg-primary/5 px-4 py-3">
-      <UIcon name="i-lucide-sparkles" class="size-4 text-primary shrink-0" />
+      <UIcon name="i-iconoir-spark" class="size-4 text-primary shrink-0" />
       <span class="text-sm font-semibold text-highlighted">AI summary</span>
       <span class="text-xs text-dimmed ml-auto">{{ environmentLabel }} · {{ generatedAt }}</span>
     </div>

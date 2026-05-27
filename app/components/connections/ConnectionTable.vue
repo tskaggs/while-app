@@ -1,20 +1,32 @@
 <script setup lang="ts">
 import type { Connection, EhrVendor } from '~/types/while'
 import type { TableColumn } from '@nuxt/ui'
+import { LIVE_BLOCKER_LABELS } from '~/data/connections'
 
 defineProps<{
   connections: Connection[]
 }>()
 
-const columns: TableColumn<Connection>[] = [
-  { accessorKey: 'partnerName', header: 'Partner' },
-  { accessorKey: 'ehrVendor', header: 'EHR' },
-  { accessorKey: 'environment', header: 'Environment' },
-  { accessorKey: 'sidecarId', header: 'Sidecar' },
-  { accessorKey: 'tunnelStatus', header: 'Tunnel' },
-  { accessorKey: 'lastSyncAt', header: 'Last Sync' },
-  { id: 'actions', header: '' }
-]
+const { isLive, isLiveActivated } = useConnections()
+
+const columns = computed<TableColumn<Connection>[]>(() => {
+  const cols: TableColumn<Connection>[] = [
+    { accessorKey: 'partnerName', header: 'Partner' },
+    { accessorKey: 'ehrVendor', header: 'EHR' }
+  ]
+  if (!isLive.value) {
+    cols.push({ accessorKey: 'environment', header: 'Environment' })
+  } else {
+    cols.push({ accessorKey: 'liveActivation', header: 'Live' })
+  }
+  cols.push(
+    { accessorKey: 'sidecarId', header: 'Sidecar' },
+    { accessorKey: 'tunnelStatus', header: 'Tunnel' },
+    { accessorKey: 'lastSyncAt', header: 'Last Sync' },
+    { id: 'actions', header: '' }
+  )
+  return cols
+})
 
 function formatRelative(date: string) {
   const diff = Date.now() - new Date(date).getTime()
@@ -56,6 +68,33 @@ function formatRelative(date: string) {
       </UBadge>
     </template>
 
+    <template #liveActivation-cell="{ row }">
+      <UBadge
+        v-if="isLiveActivated(row.original)"
+        color="success"
+        variant="subtle"
+      >
+        Activated
+      </UBadge>
+      <div
+        v-else
+        class="space-y-0.5"
+      >
+        <UBadge
+          color="warning"
+          variant="subtle"
+        >
+          Not activated
+        </UBadge>
+        <p
+          v-if="row.original.liveActivation?.blocker"
+          class="text-[10px] text-dimmed"
+        >
+          {{ LIVE_BLOCKER_LABELS[row.original.liveActivation.blocker] }}
+        </p>
+      </div>
+    </template>
+
     <template #sidecarId-cell="{ row }">
       <code class="text-xs text-muted">{{ row.original.sidecarId }}</code>
     </template>
@@ -73,16 +112,16 @@ function formatRelative(date: string) {
         :to="`/connections/${row.original.id}`"
         color="neutral"
         variant="ghost"
-        icon="i-lucide-arrow-right"
+        icon="i-iconoir-arrow-right"
         size="xs"
       />
     </template>
 
     <template #empty>
       <div class="flex flex-col items-center gap-3 py-12">
-        <UIcon name="i-lucide-network" class="size-10 text-muted" />
+        <UIcon name="i-iconoir-network" class="size-10 text-muted" />
         <p class="text-muted">No connections in this environment yet.</p>
-        <UButton to="/support?compose=connection" label="Request Connection Support" icon="i-lucide-plus" />
+        <UButton to="/support?compose=connection" label="Request Connection Support" icon="i-iconoir-plus" />
       </div>
     </template>
   </UTable>

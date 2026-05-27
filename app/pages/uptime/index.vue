@@ -5,7 +5,7 @@ const {
   filterTunnelLogs,
   buildUptimeChart
 } = useTunnelUptime()
-const { connections } = useConnections()
+const { connections, operationalConnections, isLive } = useConnections()
 
 const selectedDate = ref('2026-05-20')
 const granularity = ref<TunnelUptimeGranularity>('hour')
@@ -57,13 +57,16 @@ const hourOptions = computed(() => [
   }))
 ])
 
-const connectionOptions = computed(() => [
-  { label: 'All connections', value: undefined },
-  ...connections.value.map(connection => ({
-    label: connection.partnerName,
-    value: connection.id
-  }))
-])
+const connectionOptions = computed(() => {
+  const list = isLive.value ? operationalConnections.value : connections.value
+  return [
+    { label: 'All connections', value: undefined },
+    ...list.map(connection => ({
+      label: connection.partnerName,
+      value: connection.id
+    }))
+  ]
+})
 
 const severityOptions = [
   { label: 'All severities', value: undefined },
@@ -104,6 +107,7 @@ function openLogDetail(log: ReturnType<typeof filterTunnelLogs>[number]) {
 </script>
 
 <template>
+  <LiveViewGate>
   <div class="space-y-6">
     <PageHeader title="Tunnel Uptime">
       <template #filters>
@@ -150,7 +154,7 @@ function openLogDetail(log: ReturnType<typeof filterTunnelLogs>[number]) {
         />
         <UInput
           v-model="search"
-          icon="i-lucide-search"
+          icon="i-iconoir-search"
           placeholder="Search tunnel logs..."
           class="w-full sm:w-56"
         />
@@ -212,4 +216,5 @@ function openLogDetail(log: ReturnType<typeof filterTunnelLogs>[number]) {
       </template>
     </USlideover>
   </div>
+  </LiveViewGate>
 </template>

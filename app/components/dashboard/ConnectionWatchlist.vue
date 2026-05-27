@@ -91,7 +91,7 @@ function sparklinePoints(seed: string): string {
     <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
       <UInput
         v-model="search"
-        icon="i-lucide-search"
+        icon="i-iconoir-search"
         placeholder="Search connections..."
         class="w-full sm:w-56"
       />

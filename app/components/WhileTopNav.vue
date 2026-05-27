@@ -51,7 +51,7 @@ const navItems: NavigationMenuItem[] = [{
         <EnvironmentSwitcher />
         <TunnelUptimeIndicator />
         <UButton
-          icon="i-lucide-bell"
+          icon="i-iconoir-bell"
           color="neutral"
           variant="ghost"
           size="sm"

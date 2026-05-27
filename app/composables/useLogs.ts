@@ -58,6 +58,7 @@ const rangeMs: Record<LogTimeRange, number> = {
 
 const _useLogs = () => {
   const { environment } = useEnvironment()
+  const { operationalConnections, isLive } = useConnections()
   const anonymize = ref(true)
 
   const rawLogs = computed(() => {
@@ -67,8 +68,12 @@ const _useLogs = () => {
     const audit = (environment.value === 'sandbox' ? sandboxAuditLogs : liveAuditLogs)
       .map(entry => auditToLogEntry(entry))
 
-    return [...integration, ...tunnel, ...audit]
+    const merged = [...integration, ...tunnel, ...audit]
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+
+    if (!isLive.value) return merged
+    const allowed = new Set(operationalConnections.value.map(c => c.id))
+    return merged.filter(log => log.connectionId === '—' || allowed.has(log.connectionId))
   })
 
   const displayLogs = computed<DisplayLogEntry[]>(() =>

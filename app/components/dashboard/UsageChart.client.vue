@@ -12,7 +12,7 @@ import type { UsageDataPoint } from '~/types/while'
 
 const cardRef = useTemplateRef<HTMLElement | null>('cardRef')
 const { chartData } = useUsageMetrics()
-const { connections } = useConnections()
+const { operationalConnections } = useConnections()
 const { enrichPoints } = useOverviewChart()
 const { width } = useElementSize(cardRef)
 
@@ -41,7 +41,7 @@ const data = computed<DataRecord[]>(() => {
 })
 
 const chartSeries = computed(() =>
-  connections.value.map((connection, index) => ({
+  operationalConnections.value.map((connection, index) => ({
     id: connection.id,
     label: connection.partnerName,
     color: getChartHeroColor(index)

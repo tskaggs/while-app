@@ -109,10 +109,14 @@ function buildHistogram(
 
 const _useMessages = () => {
   const { environment } = useEnvironment()
+  const { operationalConnections, isLive } = useConnections()
 
-  const messages = computed(() =>
-    environment.value === 'sandbox' ? sandboxMessages : liveMessages
-  )
+  const messages = computed(() => {
+    const base = environment.value === 'sandbox' ? sandboxMessages : liveMessages
+    if (!isLive.value) return base
+    const allowed = new Set(operationalConnections.value.map(c => c.id))
+    return base.filter(m => allowed.has(m.connectionId))
+  })
 
   return {
     messages,

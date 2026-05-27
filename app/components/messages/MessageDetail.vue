@@ -43,7 +43,7 @@ function formatTimestamp(timestamp: string) {
           class="capitalize"
         >
           <UIcon
-            :name="message.direction === 'inbound' ? 'i-lucide-arrow-down-left' : 'i-lucide-arrow-up-right'"
+            :name="message.direction === 'inbound' ? 'i-iconoir-arrow-down-left' : 'i-iconoir-arrow-up-right'"
             class="size-3"
           />
           {{ message.direction }}
@@ -70,7 +70,7 @@ function formatTimestamp(timestamp: string) {
           class="text-sm text-primary hover:underline mt-0.5 inline-flex items-center gap-1"
         >
           {{ message.partnerName }}
-          <UIcon name="i-lucide-arrow-up-right" class="size-3.5" />
+          <UIcon name="i-iconoir-arrow-up-right" class="size-3.5" />
         </NuxtLink>
         <p class="text-xs text-muted">{{ message.connectionId }}</p>
       </div>

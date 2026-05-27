@@ -1,4 +1,4 @@
-import { sandboxConnections, liveConnections } from '~/data/connections'
+import { allLiveConnections, allSandboxConnections } from '~/data/connections'
 import type {
   Connection,
   MessageDirection,
@@ -110,5 +110,5 @@ function generateMessages(connections: Connection[], prefix: string): ProcessedM
   return messages.sort((a, b) => b.timestamp.localeCompare(a.timestamp))
 }
 
-export const sandboxMessages = generateMessages(sandboxConnections, 'msg-sb')
-export const liveMessages = generateMessages(liveConnections, 'msg-lv')
+export const sandboxMessages = generateMessages(allSandboxConnections, 'msg-sb')
+export const liveMessages = generateMessages(allLiveConnections, 'msg-lv')

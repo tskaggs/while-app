@@ -18,8 +18,8 @@ const statusColors: Record<SupportInboxItem['status'], 'success' | 'warning' | '
 }
 
 const kindIcons: Record<SupportInboxItem['kind'], string> = {
-  connection: 'i-lucide-network',
-  ticket: 'i-lucide-headphones'
+  connection: 'i-iconoir-network',
+  ticket: 'i-iconoir-headset'
 }
 
 function formatDate(date: string) {

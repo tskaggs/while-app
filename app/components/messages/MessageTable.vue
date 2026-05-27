@@ -63,7 +63,7 @@ function formatTimestamp(timestamp: string) {
         class="capitalize"
       >
         <UIcon
-          :name="row.original.direction === 'inbound' ? 'i-lucide-arrow-down-left' : 'i-lucide-arrow-up-right'"
+          :name="row.original.direction === 'inbound' ? 'i-iconoir-arrow-down-left' : 'i-iconoir-arrow-up-right'"
           class="size-3"
         />
         {{ row.original.direction }}
@@ -94,7 +94,7 @@ function formatTimestamp(timestamp: string) {
 
     <template #empty>
       <div class="flex flex-col items-center gap-3 py-12">
-        <UIcon name="i-lucide-inbox" class="size-10 text-muted" />
+        <UIcon name="i-iconoir-mail-in" class="size-10 text-muted" />
         <p class="text-muted">No messages match your filters.</p>
       </div>
     </template>

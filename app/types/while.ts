@@ -4,6 +4,22 @@ export type EhrVendor = 'Epic' | 'Cerner' | 'Meditech' | 'Athena' | 'Other'
 
 export type TunnelStatus = 'active' | 'pending' | 'error'
 
+/** Why a sandbox partner’s Live connection is not yet operational */
+export type LiveActivationBlocker =
+  | 'customer_action'
+  | 'while_documents'
+  | 'clinic_approval'
+  | 'clinic_connectivity'
+
+export interface LiveActivation {
+  activated: boolean
+  blocker?: LiveActivationBlocker
+  title: string
+  detail: string
+  /** e.g. "Summit Health IT", "While Compliance", "Customer" */
+  waitingOn?: string
+}
+
 export type SupportRequestStatus = 'submitted' | 'in_review' | 'in_progress' | 'completed'
 
 export type LogSeverity = 'info' | 'warn' | 'error' | 'success'
@@ -32,6 +48,8 @@ export interface Connection {
   partnerName: string
   ehrVendor: EhrVendor
   environment: WhileEnvironment
+  /** Paired connection in the other environment (sandbox ↔ live) */
+  pairedConnectionId: string
   sidecarId: string
   tunnelStatus: TunnelStatus
   wireguardPublicKey: string
@@ -40,6 +58,8 @@ export interface Connection {
   flightCheck: FlightCheck
   region: string
   messagesProcessed24h: number
+  /** Present on Live connections — gates Live-only views when not activated */
+  liveActivation?: LiveActivation
 }
 
 export interface UsageStat {

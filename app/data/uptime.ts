@@ -1,4 +1,4 @@
-import { liveConnections, sandboxConnections } from '~/data/connections'
+import { allLiveConnections, allSandboxConnections } from '~/data/connections'
 import type {
   Connection,
   IncidentMessage,
@@ -100,47 +100,35 @@ function generateTunnelLogs(connections: Connection[], prefix: string): TunnelLo
 }
 
 function withScriptedEvents(logs: TunnelLogEntry[], prefix: string): TunnelLogEntry[] {
-  const scripted: TunnelLogEntry[] = [
-    {
-      id: `tlog-${prefix}-lv3-00`,
-      timestamp: '2026-05-20T14:55:00Z',
-      connectionId: 'conn-lv-003',
-      partnerName: 'Prairie Community Hospital',
-      severity: 'error',
-      eventType: 'disconnect',
-      message: 'Tunnel connection lost — WireGuard peer unreachable for 15 minutes',
-      incidentId: `inc-${prefix}-001`
-    },
-    {
-      id: `tlog-${prefix}-lv3-01`,
-      timestamp: '2026-05-20T14:40:12Z',
-      connectionId: 'conn-lv-003',
-      partnerName: 'Prairie Community Hospital',
-      severity: 'warn',
-      eventType: 'latency',
-      message: 'Tunnel latency spike detected — round-trip 2.4s before disconnect',
-      incidentId: `inc-${prefix}-001`
-    },
-    {
-      id: `tlog-${prefix}-sb2-00`,
-      timestamp: '2026-05-20T14:48:22Z',
-      connectionId: 'conn-sb-002',
-      partnerName: 'Summit Health Partners',
-      severity: 'warn',
-      eventType: 'handshake',
-      message: 'WireGuard handshake pending — clinic gateway has not added public key',
-      incidentId: `inc-${prefix}-001`
-    },
-    {
-      id: `tlog-${prefix}-lv1-00`,
-      timestamp: '2026-05-20T14:52:18Z',
-      connectionId: 'conn-lv-001',
-      partnerName: 'MetroCare Health System',
-      severity: 'info',
-      eventType: 'credential',
-      message: 'Automated credential rotation completed — new WireGuard keys deployed'
-    }
-  ]
+  const scripted: TunnelLogEntry[] = prefix === 'sb'
+    ? [{
+        id: `tlog-${prefix}-sb2-00`,
+        timestamp: '2026-05-20T14:48:22Z',
+        connectionId: 'conn-sb-002',
+        partnerName: 'Summit Health Partners',
+        severity: 'warn',
+        eventType: 'handshake',
+        message: 'WireGuard handshake pending — clinic gateway has not added public key',
+        incidentId: `inc-${prefix}-001`
+      }]
+    : [{
+        id: `tlog-${prefix}-lv1-00`,
+        timestamp: '2026-05-20T14:52:18Z',
+        connectionId: 'conn-lv-001',
+        partnerName: 'North Valley Clinic',
+        severity: 'info',
+        eventType: 'credential',
+        message: 'Automated credential rotation completed — new WireGuard keys deployed'
+      }, {
+        id: `tlog-${prefix}-lv1-01`,
+        timestamp: '2026-05-20T13:55:00Z',
+        connectionId: 'conn-lv-001',
+        partnerName: 'North Valley Clinic',
+        severity: 'warn',
+        eventType: 'latency',
+        message: 'Tunnel latency spike detected — round-trip 2.4s (resolved)',
+        incidentId: `inc-${prefix}-001`
+      }]
 
   const withoutDupes = logs.filter(log =>
     !scripted.some(item => item.connectionId === log.connectionId && item.timestamp.slice(0, 13) === log.timestamp.slice(0, 13))
@@ -169,14 +157,15 @@ function generateIncidents(prefix: string, connections: Connection[]): IncidentR
   return [
     {
       id: `inc-${prefix}-001`,
-      connectionId: 'conn-lv-003',
-      partnerName: 'Prairie Community Hospital',
-      title: 'WireGuard tunnel unreachable',
-      summary: 'The sidecar lost connectivity to the clinic WireGuard peer for approximately 15 minutes. Initial latency spike preceded the disconnect. Partner IT notified and investigating firewall changes on their gateway.',
-      severity: 'critical',
-      status: 'investigating',
-      startedAt: '2026-05-20T14:40:12Z',
-      relatedLogIds: [`tlog-${prefix}-lv3-00`, `tlog-${prefix}-lv3-01`]
+      connectionId: 'conn-lv-001',
+      partnerName: 'North Valley Clinic',
+      title: 'Brief tunnel latency spike',
+      summary: 'North Valley Clinic reported a short latency spike during peak hours. Tunnel remained up; no message loss. Monitoring continues on the activated Live sidecar.',
+      severity: 'minor',
+      status: 'resolved',
+      startedAt: '2026-05-20T13:40:12Z',
+      resolvedAt: '2026-05-20T14:10:00Z',
+      relatedLogIds: [`tlog-${prefix}-lv1-00`]
     }
   ]
 }
@@ -207,30 +196,23 @@ function generateIncidentMessages(prefix: string): IncidentMessage[] {
       incidentId: `inc-${prefix}-001`,
       author: 'While Platform',
       timestamp: '2026-05-20T14:55:30Z',
-      body: 'Automated alert: tunnel disconnect detected for Prairie Community Hospital. Incident opened and partner contacts notified.'
+      body: 'Automated alert: latency spike detected on North Valley Clinic Live tunnel. Within normal range after 3 minutes.'
     },
     {
       id: `imsg-${prefix}-002`,
       incidentId: `inc-${prefix}-001`,
       author: 'Sarah Chen (While Support)',
-      timestamp: '2026-05-20T15:02:00Z',
-      body: 'Reached Prairie IT — they report a firewall rule change during maintenance. Rollback in progress. Monitoring sidecar reconnect attempts.'
-    },
-    {
-      id: `imsg-${prefix}-003`,
-      incidentId: `inc-${prefix}-001`,
-      author: 'Prairie IT (via portal)',
-      timestamp: '2026-05-20T15:18:45Z',
-      body: 'Firewall rule reverted. Please confirm tunnel handshake from your side. We see UDP 51820 open again.'
+      timestamp: '2026-05-20T14:05:00Z',
+      body: 'Confirmed with North Valley IT — no action required. Live connection remains activated and healthy.'
     }
   ]
 }
 
-export const sandboxTunnelLogs = withScriptedEvents(generateTunnelLogs(sandboxConnections, 'sb'), 'sb')
-export const liveTunnelLogs = withScriptedEvents(generateTunnelLogs(liveConnections, 'lv'), 'lv')
+export const sandboxTunnelLogs = withScriptedEvents(generateTunnelLogs(allSandboxConnections, 'sb'), 'sb')
+export const liveTunnelLogs = withScriptedEvents(generateTunnelLogs(allLiveConnections, 'lv'), 'lv')
 
-export const sandboxIncidents = generateIncidents('sb', sandboxConnections)
-export const liveIncidents = generateIncidents('lv', liveConnections)
+export const sandboxIncidents = generateIncidents('sb', allSandboxConnections)
+export const liveIncidents = generateIncidents('lv', allLiveConnections)
 
 export const sandboxIncidentMessages = generateIncidentMessages('sb')
 export const liveIncidentMessages = generateIncidentMessages('lv')

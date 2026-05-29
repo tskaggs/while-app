@@ -5,7 +5,7 @@ export const useConnectionDetail = () => {
   const route = useRoute()
   const router = useRouter()
   const { environment } = useEnvironment()
-  const { getConnectionForCurrentEnvironment } = useConnections()
+  const { getConnectionForCurrentEnvironment, isSystemSandbox } = useConnections()
 
   const connectionId = computed(() => route.params.id as string)
 
@@ -55,6 +55,7 @@ export const useConnectionDetail = () => {
     connection,
     connectionBasePath,
     navItems,
-    useConnectionPageMeta
+    useConnectionPageMeta,
+    isSystemSandbox
   }
 }

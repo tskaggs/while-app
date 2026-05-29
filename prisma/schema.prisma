@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Better-Auth (generated via npx auth@latest generate) ---
+
+model User {
+  id            String       @id
+  name          String
+  email         String
+  emailVerified Boolean      @default(false)
+  image         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  members       Member[]
+  invitations   Invitation[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id                   String   @id
+  expiresAt            DateTime
+  token                String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Organization {
+  id          String       @id
+  name        String
+  slug        String
+  logo        String?
+  createdAt   DateTime
+  metadata    String?
+  members     Member[]
+  invitations Invitation[]
+
+  @@unique([slug])
+  @@map("organization")
+}
+
+model Member {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @default("member")
+  createdAt      DateTime
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("member")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String       @default("pending")
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invitation")
+}
+
+// --- Machine plane (shared with ultra-a control plane) ---
+
+model MachineOrganization {
+  id        String   @id @db.Uuid
+  name      String
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  apiKeys              ApiKey[]
+  sandboxSettings      SandboxSettings?
+  dashboardConnections DashboardConnection[]
+  orgOnboarding        OrgOnboarding?
+
+  @@map("organizations")
+}
+
+model ApiKey {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId       String   @map("org_id") @db.Uuid
+  hashedKey   String   @unique @map("hashed_key") @db.Char(64)
+  keyPrefix   String   @map("key_prefix") @db.VarChar(12)
+  environment String   @db.VarChar(10)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}
+
+model SandboxSettings {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId               String   @unique @map("org_id") @db.Uuid
+  webhookUrl          String?  @map("webhook_url")
+  webhookSecret       String?  @map("webhook_secret")
+  cronEnabled         Boolean  @default(true) @map("cron_enabled")
+  cronIntervalSeconds Int      @default(300) @map("cron_interval_seconds")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("sandbox_settings")
+}
+
+// --- Dashboard app extensions ---
+
+model DashboardConnection {
+  id                 String   @id
+  orgId              String   @map("org_id") @db.Uuid
+  name               String
+  connectionType     String   @map("connection_type")
+  environment        String
+  pairedConnectionId String?  @map("paired_connection_id")
+  isHidden           Boolean  @default(false) @map("is_hidden")
+  isDeletable        Boolean  @default(true) @map("is_deletable")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("dashboard_connections")
+}
+
+model OrgOnboarding {
+  orgId         String    @id @map("org_id") @db.Uuid
+  completedAt   DateTime? @map("completed_at") @db.Timestamptz
+  apiKeyShownAt DateTime? @map("api_key_shown_at") @db.Timestamptz
+
+  organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("org_onboarding")
+}

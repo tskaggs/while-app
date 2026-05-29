@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EhrVendor } from '~/types/while'
 
-const { connections } = useConnections()
+const { connections, showSystemSandbox } = useConnections()
 const { environmentLabel } = useEnvironment()
 
 const statusFilter = ref<string | undefined>()
@@ -61,6 +61,7 @@ useSeoMeta({ title: 'Connections' })
           placeholder="Filter by EHR"
           class="w-full sm:w-44"
         />
+        <UCheckbox v-model="showSystemSandbox" label="Show system sandbox" />
         <UBadge color="neutral" variant="subtle">
           {{ filtered.length }} in {{ environmentLabel }}
         </UBadge>

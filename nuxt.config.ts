@@ -13,6 +13,18 @@ export default defineNuxtConfig({
     enabled: true
   },
 
+  runtimeConfig: {
+    databaseUrl: process.env.DATABASE_URL || '',
+    whileApiUrl: process.env.WHILE_API_URL || 'http://localhost:8000',
+    betterAuthSecret: process.env.BETTER_AUTH_SECRET || '',
+    betterAuthUrl: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+    public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+      whileApiUrl: process.env.NUXT_PUBLIC_WHILE_API_URL || process.env.WHILE_API_URL || 'http://localhost:8000',
+      mockMode: process.env.NUXT_PUBLIC_MOCK_MODE === 'true'
+    }
+  },
+
   css: ['~/assets/css/main.css'],
 
   colorMode: {

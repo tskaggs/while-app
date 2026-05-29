@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+import { authClient } from '~/lib/auth-client'
+
+const config = useRuntimeConfig()
+const { data: session } = await authClient.useSession(useFetch)
+
+const showNav = computed(() => config.public.mockMode || Boolean(session.value))
 
 const navItems: NavigationMenuItem[] = [{
   label: 'Overview',
@@ -29,7 +35,7 @@ const navItems: NavigationMenuItem[] = [{
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 border-b border-default bg-default/80 backdrop-blur-md">
+  <header v-if="showNav" class="sticky top-0 z-50 border-b border-default bg-default/80 backdrop-blur-md">
     <div class="flex h-14 items-center gap-4 px-4 lg:px-6">
       <WhileLogo />
 

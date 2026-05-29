@@ -1,19 +1,27 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
+import { authClient, signOut } from '~/lib/auth-client'
 
 defineProps<{
   collapsed?: boolean
 }>()
 
+const config = useRuntimeConfig()
 const colorMode = useColorMode()
+const { data: session } = await authClient.useSession(useFetch)
 
-const user = ref({
-  name: 'Sarah Chen'
-})
+const userName = computed(() => session.value?.user.name ?? 'Account')
+const userEmail = computed(() => session.value?.user.email ?? '')
+
+async function logout() {
+  await signOut()
+  await navigateTo('/login')
+}
 
 const items = computed<DropdownMenuItem[][]>(() => ([[{
   type: 'label',
-  label: user.value.name,
+  label: userName.value,
+  description: userEmail.value || undefined,
   icon: 'i-iconoir-user-circle'
 }], [{
   label: 'Light',
@@ -42,13 +50,16 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
     e.preventDefault()
     colorMode.preference = 'system'
   }
-}], [{
+}], ...(config.public.mockMode ? [] : [[{
   label: 'Settings',
   icon: 'i-iconoir-settings',
   to: '/settings'
-}], [{
+}]]), [{
   label: 'Log out',
-  icon: 'i-iconoir-log-out'
+  icon: 'i-iconoir-log-out',
+  onSelect() {
+    if (!config.public.mockMode) logout()
+  }
 }]]))
 </script>
 
@@ -56,7 +67,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   <UDropdownMenu
     :items="items"
     :content="{ align: 'end', collisionPadding: 12 }"
-    :ui="{ content: collapsed ? 'w-48' : 'w-48' }"
+    :ui="{ content: collapsed ? 'w-48' : 'w-56' }"
   >
     <UButton
       icon="i-iconoir-profile-circle"

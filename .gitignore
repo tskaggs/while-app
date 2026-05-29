@@ -9,6 +9,7 @@ dist
 # Node
 node_modules
 .pnpm-store
+_tmp_*
 package-lock.json
 npm-debug.log*
 yarn-debug.log*
@@ -22,10 +23,17 @@ logs
 # Test / coverage
 coverage
 
+# TypeScript
+*.tsbuildinfo
+
 # Local env
 .env
 .env.*
 !.env.example
+
+# Prisma (local/dev databases only — migrations stay tracked)
+prisma/*.db
+prisma/*.db-journal
 
 # OS
 .DS_Store
@@ -35,3 +43,13 @@ Thumbs.db
 .fleet
 .idea
 .history
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# Cursor (local workspace state)
+.cursor/
+
+# Deploy targets
+.vercel
+.netlify

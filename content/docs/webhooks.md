@@ -1,53 +1,71 @@
 ---
 title: Webhooks
-description: Receive real-time FHIR events from While Sidecar instances.
+description: Receive real-time FHIR events from the While control plane and Sidecars.
 ---
 
 # Webhooks
 
-While delivers normalized FHIR R4 events to your configured webhook URL when data flows through a Sidecar.
+While delivers normalized FHIR R4 events to your configured webhook URL.
 
 ## Configuration
 
-Set your webhook URL in **Settings → Webhook URL**. Each environment (Sandbox/Live) can have a separate destination.
+Set your webhook URL in **Settings → Webhook URL**. During onboarding, the dashboard configures a test receiver at `/api/webhooks/while` on your Nuxt server.
+
+Sandbox webhook secrets use the `whsec_*` prefix and are provisioned during onboarding.
 
 ## Event Payload
 
 ```json
 {
-  "event": "patient.created",
+  "event": "patient.admitted",
   "resource": {
-    "resourceType": "Patient",
-    "id": "example"
+    "resourceType": "Encounter",
+    "id": "enc_00000000_12345"
   },
-  "connection_id": "conn-lv-001",
-  "environment": "live",
-  "timestamp": "2026-05-20T14:55:00Z"
+  "connection_id": "conn-sa-00000000",
+  "environment": "sandbox",
+  "timestamp": "2026-05-29T12:00:00Z",
+  "org_id": "00000000-0000-4000-8000-000000000001"
 }
 ```
 
 ## Signature Verification
 
-All webhook payloads include an `X-While-Signature` header with an HMAC-SHA256 signature. Verify using your webhook secret:
+Outbound payloads include `X-While-Signature` (HMAC-SHA256) and `X-While-Event` headers:
 
 ```typescript
-const signature = crypto
-  .createHmac('sha256', webhookSecret)
+import { createHmac, timingSafeEqual } from 'crypto'
+
+const expected = createHmac('sha256', webhookSecret)
   .update(rawBody)
   .digest('hex')
+
+if (!timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) {
+  throw new Error('Invalid signature')
+}
 ```
 
-## Event Types
+## Trigger a test webhook (sandbox)
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer wh_test_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{"event":"patient.admitted","patient_id":"pat_00000000_01"}' \
+  http://localhost:8000/v1/webhooks/trigger-mock-event | jq .
+```
+
+The 202 response includes `connection_id` and `envelope_preview` showing what will be delivered.
+
+## Event Types (Phase 1)
 
 | Event | Description |
 |-------|-------------|
-| `patient.created` | New patient record normalized from HL7 ADT |
+| `patient.created` | Synthetic patient record |
 | `patient.updated` | Patient demographics changed |
-| `observation.created` | Lab result or vital sign received |
-| `encounter.created` | New encounter or visit |
-| `tunnel.connected` | WireGuard tunnel established |
-| `tunnel.disconnected` | Tunnel lost — check connection health |
+| `patient.admitted` | Inpatient admission |
+| `patient.discharged` | Discharge event |
+| `encounter.created` | New encounter |
+| `observation.created` | Lab result or vital sign |
 
-## Retry Policy
-
-Failed webhook deliveries (non-2xx response) are retried with exponential backoff: 1m, 5m, 15m, 1h, up to 24h.
+**Not yet implemented:** webhook retry/replay queues, `tunnel.connected` / `tunnel.disconnected` events.

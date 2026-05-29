@@ -1,6 +1,6 @@
 # While interface — current version
 
-This document describes the **UI-only MVP** of the While operator console: layout, navigation, environments, and each major view. All data is mock/static; there is no backend API or real authentication.
+This document describes the While operator console: layout, navigation, environments, authentication, onboarding, and each major view. With `NUXT_PUBLIC_MOCK_MODE=false`, data comes from PostgreSQL (shared with ultra-a) and the control plane API. Set `NUXT_PUBLIC_MOCK_MODE=true` for UI-only mock data.
 
 ---
 
@@ -14,6 +14,43 @@ While is positioned as a **healthcare EMR/EHR connectivity platform**. The inter
 - Manage compliance artifacts and request support for onboarding
 
 The experience is a single-page application built with **Nuxt 4** and **Nuxt UI 4**, using a top navigation shell rather than a persistent sidebar.
+
+---
+
+## Authentication
+
+- **Sign in** — `/login` (email + password via Better Auth)
+- **Sign up** — `/signup` (creates user + organization)
+- **Session** — `authClient.useSession()`; global middleware redirects unauthenticated users
+- **User menu** — real name/email, sign out, settings link
+- **Team invites** — `/accept-invitation/{id}`; dev-mode links in Settings
+
+Public routes: `/login`, `/signup`, `/accept-invitation/*`, `/docs/*`.
+
+---
+
+## Operator onboarding (`/onboarding`)
+
+Five-step wizard after first signup:
+
+1. **Organization** — provisions machine-plane org, sandbox API key, webhook secret, system sandbox connection
+2. **Credentials** — one-time display of `wh_test_*` key and `whsec_*` secret
+3. **API test** — live `GET /v1/patients/{id}` against ultra-a
+4. **Snippets & webhook** — curl/TypeScript examples; trigger mock webhook
+5. **Team invites** — optional; skip to dashboard
+
+Completed onboarding sets `org_onboarding.completed_at` and unlocks the main dashboard.
+
+---
+
+## System sandbox connection
+
+Every provisioned account gets a **While Sandbox** connection:
+
+- ID: `conn-sa-{org_short_id}` (matches webhook `connection_id`)
+- Environment: sandbox only — **no live twin**, not deletable
+- Hideable via **Show system sandbox** checkbox on Connections (persisted in `localStorage`)
+- Detail view shows API integration panel instead of topology map
 
 ---
 
@@ -90,7 +127,9 @@ Switching environments:
 
 ### Paired connections
 
-Every sandbox connection has a **live twin** (`pairedConnectionId`). Demo data includes four pairs (e.g. North Valley, Summit, Riverside, Lakeview).
+Partner sandbox connections have a **live twin** (`pairedConnectionId`). Mock demo data includes four pairs when `NUXT_PUBLIC_MOCK_MODE=true`.
+
+The **While Sandbox** system connection has no paired live connection.
 
 ### Live activation
 

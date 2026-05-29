@@ -5,36 +5,30 @@ description: HTTP status codes and error responses from the While API.
 
 # Error Codes
 
-While uses standard HTTP status codes with structured error responses.
+The control plane (ultra-a FastAPI) uses standard HTTP status codes. Errors return a JSON `detail` string.
 
-## Error Format
+## Control plane errors
 
-```json
-{
-  "error": {
-    "code": "tunnel_disconnected",
-    "message": "WireGuard tunnel to clinic gateway is unreachable",
-    "connection_id": "conn-lv-003",
-    "retry_after": 30
-  }
-}
-```
+| Condition | HTTP | Detail |
+|-----------|------|--------|
+| Invalid/missing bearer token | 401 | Unauthorized |
+| Token prefix ≠ DB environment | 401 | Unauthorized |
+| `wh_live_*` on sandbox-only org | 403 | Live environment not provisioned for this organization. |
+| Live key on sandbox-only route | 403 | This endpoint requires a sandbox API key (wh_test_*). |
+| Patient not found (invalid ID format) | 404 | Patient not found |
+| Webhook URL not configured | 422 | Webhook URL not configured. Set a destination in Settings → Webhook URL. |
+| Webhook secret missing | 422 | Webhook secret not configured. |
 
-## Common Errors
+## Dashboard webhook receiver
 
-| Code | HTTP | Description |
-|------|------|-------------|
-| `unauthorized` | 401 | Invalid or missing API key |
-| `forbidden` | 403 | Insufficient scope for this resource |
-| `not_found` | 404 | Resource or connection not found |
-| `tunnel_disconnected` | 502 | Sidecar tunnel to EHR is down |
-| `mapping_error` | 422 | HL7-to-FHIR mapping failed |
-| `rate_limited` | 429 | Too many requests — check `retry_after` |
-| `internal_error` | 500 | Sidecar internal error — check logs |
+| Condition | HTTP | Message |
+|-----------|------|---------|
+| Invalid signature | 401 | Invalid webhook signature |
+| Missing org_id | 400 | Missing org_id in payload |
 
 ## Troubleshooting
 
-1. Check **Connection Health** on the dashboard
-2. Run the **Flight Check** on the connection detail page
-3. Review **Integration Logs** with PHI anonymization enabled
-4. Submit a **Connection Support** request if the tunnel remains down
+1. Confirm your API key prefix matches the intended environment
+2. Check **Settings → Webhook URL** is configured before triggering test webhooks
+3. Use `GET /v1/sandbox/catalog` to verify org-scoped patient IDs and example payloads
+4. Review the onboarding wizard code snippets for working curl examples

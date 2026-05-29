@@ -1,12 +1,17 @@
 <script setup lang="ts">
-const { connection, useConnectionPageMeta } = useConnectionDetail()
+const { connection, useConnectionPageMeta, isSystemSandbox } = useConnectionDetail()
+const config = useRuntimeConfig()
 
 useConnectionPageMeta()
 </script>
 
 <template>
   <div v-if="connection" class="space-y-6">
-    <ConnectionsTopologyMap :connection="connection" />
+    <ConnectionsSystemSandboxPanel
+      v-if="isSystemSandbox(connection)"
+      :connection="connection"
+    />
+    <ConnectionsTopologyMap v-else :connection="connection" />
 
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <UCard class="lg:col-span-2 rounded-xl border border-default bg-elevated">
@@ -48,7 +53,7 @@ useConnectionPageMeta()
               {{ connection.environment }}
             </dd>
           </div>
-          <div>
+          <div v-if="connection.pairedConnectionId">
             <dt class="text-muted">
               Paired connection
             </dt>
@@ -59,6 +64,14 @@ useConnectionPageMeta()
               >
                 {{ connection.pairedConnectionId }}
               </NuxtLink>
+            </dd>
+          </div>
+          <div v-else-if="isSystemSandbox(connection)">
+            <dt class="text-muted">
+              Live twin
+            </dt>
+            <dd class="text-muted">
+              None — system sandbox is sandbox-only
             </dd>
           </div>
         </dl>

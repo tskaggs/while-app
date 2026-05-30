@@ -9,6 +9,10 @@ export default defineNuxtConfig({
     '@vueuse/nuxt'
   ],
 
+  devServer: {
+    host: '0.0.0.0'  // so Docker can reach the port at all
+  },
+
   devtools: {
     enabled: true
   },
@@ -18,6 +22,7 @@ export default defineNuxtConfig({
     whileApiUrl: process.env.WHILE_API_URL || 'http://localhost:8000',
     betterAuthSecret: process.env.BETTER_AUTH_SECRET || '',
     betterAuthUrl: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+    webhookBaseUrl: process.env.WHILE_WEBHOOK_BASE_URL || '',
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       whileApiUrl: process.env.NUXT_PUBLIC_WHILE_API_URL || process.env.WHILE_API_URL || 'http://localhost:8000',
@@ -77,6 +82,10 @@ export default defineNuxtConfig({
         'zod'
       ],
       needsInterop: ['striptags']
+    },
+    server: {
+      allowedHosts: ['host.docker.internal']
+      // dev-only alternative: allowedHosts: true
     }
   },
 

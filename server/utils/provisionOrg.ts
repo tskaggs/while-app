@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'crypto'
 import { prisma } from '../lib/prisma'
-import { storePendingApiKey, getPendingApiKey } from './pendingApiKeys'
+import { storePendingApiKey, getPendingApiKey, clearPendingApiKey } from './pendingApiKeys'
+import { resolveProvisionWebhookUrl } from './webhookUrl'
 
 const KEY_PREFIX = 'wh_test_'
 const WEBHOOK_PREFIX = 'whsec_'
@@ -42,6 +43,15 @@ export function generateWebhookSecret() {
   return `${WEBHOOK_PREFIX}${generateSecret(32)}`
 }
 
+export function generateWireguardPublicKey(orgId: string) {
+  const hash = createHash('sha256').update(`wg:${orgId}`).digest('base64url')
+  return hash.slice(0, 44)
+}
+
+export function sandboxSidecarId(orgId: string) {
+  return `fc-sa-${orgShortId(orgId)}`
+}
+
 export interface ProvisionResult {
   orgId: string
   orgName: string
@@ -53,13 +63,37 @@ export interface ProvisionResult {
   keyRegenerated?: boolean
 }
 
+async function persistPendingSandboxKey(orgId: string, rawKey: string) {
+  storePendingApiKey(orgId, rawKey)
+  await prisma.orgOnboarding.upsert({
+    where: { orgId },
+    create: { orgId, pendingSandboxKey: rawKey },
+    update: { pendingSandboxKey: rawKey }
+  })
+}
+
+async function loadPendingSandboxKey(orgId: string): Promise<string | null> {
+  const inMemory = getPendingApiKey(orgId)
+  if (inMemory) return inMemory
+
+  const onboarding = await prisma.orgOnboarding.findUnique({ where: { orgId } })
+  const stored = onboarding?.pendingSandboxKey
+  if (stored) {
+    storePendingApiKey(orgId, stored)
+    return stored
+  }
+
+  return null
+}
+
 async function rotateSandboxApiKey(orgId: string) {
   const { rawKey, hashedKey } = generateSandboxApiKey()
+  const revokedAt = new Date()
 
   await prisma.$transaction(async (tx) => {
     await tx.apiKey.updateMany({
       where: { orgId, environment: 'sandbox', isActive: true },
-      data: { isActive: false }
+      data: { isActive: false, revokedAt }
     })
 
     await tx.apiKey.create({
@@ -73,13 +107,18 @@ async function rotateSandboxApiKey(orgId: string) {
     })
   })
 
-  storePendingApiKey(orgId, rawKey)
+  await persistPendingSandboxKey(orgId, rawKey)
   return rawKey
+}
+
+/** Rotate the org sandbox API key; returns plaintext once. */
+export async function rotateOrgSandboxApiKey(orgId: string) {
+  return rotateSandboxApiKey(orgId)
 }
 
 /** Return pending sandbox key, or rotate a new one while onboarding is incomplete. */
 export async function resolveOnboardingSandboxKey(orgId: string) {
-  const pendingKey = getPendingApiKey(orgId)
+  const pendingKey = await loadPendingSandboxKey(orgId)
   if (pendingKey) {
     return { sandboxApiKey: pendingKey, keyRegenerated: false }
   }
@@ -105,7 +144,7 @@ export async function provisionOrganization(
 
   const connectionId = defaultConnectionId(orgId)
   const samplePatientId = defaultPatientId(orgId, 1)
-  const webhookUrl = `${webhookBaseUrl.replace(/\/$/, '')}/api/webhooks/while`
+  const webhookUrl = resolveProvisionWebhookUrl(webhookBaseUrl)
 
   if (existing) {
     const { sandboxApiKey, keyRegenerated } = await resolveOnboardingSandboxKey(orgId)
@@ -160,16 +199,23 @@ export async function provisionOrganization(
         connectionType: 'system_sandbox',
         environment: 'sandbox',
         isDeletable: false,
-        isHidden: false
+        isHidden: false,
+        sidecarId: sandboxSidecarId(orgId),
+        tunnelStatus: 'active',
+        wireguardPublicKey: generateWireguardPublicKey(orgId),
+        ehrEndpoint: 'While Synthetic Hospital (FHIR R4)',
+        ehrVendor: 'Other',
+        region: 'control-plane',
+        lastSyncAt: new Date()
       }
     })
 
     await tx.orgOnboarding.create({
-      data: { orgId }
+      data: { orgId, pendingSandboxKey: rawKey }
     })
   })
 
-  storePendingApiKey(orgId, rawKey)
+  await persistPendingSandboxKey(orgId, rawKey)
 
   return {
     orgId,
@@ -196,10 +242,11 @@ export async function isOnboardingComplete(orgId: string) {
 }
 
 export async function completeOnboarding(orgId: string) {
+  clearPendingApiKey(orgId)
   await prisma.orgOnboarding.upsert({
     where: { orgId },
-    create: { orgId, completedAt: new Date(), apiKeyShownAt: new Date() },
-    update: { completedAt: new Date() }
+    create: { orgId, completedAt: new Date(), apiKeyShownAt: new Date(), pendingSandboxKey: null },
+    update: { completedAt: new Date(), pendingSandboxKey: null }
   })
 }
 

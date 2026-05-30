@@ -78,7 +78,7 @@ function buildUptimeChart(
   }))
 
   const buckets: TunnelUptimeBucket[] = []
-  const date = options.date ?? '2026-05-20'
+  const date = options.date ?? new Date().toISOString().slice(0, 10)
   const showHourlyBuckets = options.granularity === 'hour'
     || (options.granularity === 'minute' && options.hour === undefined)
 
@@ -93,13 +93,9 @@ function buildUptimeChart(
           connection.tunnelStatus as 'active' | 'pending' | 'error',
           index + hour + 1
         )
-        uptime[connection.id] = computeUptimePercent(
-          logs,
-          connection.id,
-          bucketStart,
-          bucketEndMs,
-          baseline
-        )
+        uptime[connection.id] = logs.length
+          ? computeUptimePercent(logs, connection.id, bucketStart, bucketEndMs, baseline)
+          : baseline
       }
 
       buckets.push({
@@ -120,13 +116,9 @@ function buildUptimeChart(
           connection.tunnelStatus as 'active' | 'pending' | 'error',
           index + hour + minute + 1
         )
-        uptime[connection.id] = computeUptimePercent(
-          logs,
-          connection.id,
-          bucketStart,
-          bucketEndMs,
-          baseline
-        )
+        uptime[connection.id] = logs.length
+          ? computeUptimePercent(logs, connection.id, bucketStart, bucketEndMs, baseline)
+          : baseline
       }
 
       buckets.push({
@@ -148,31 +140,64 @@ function buildUptimeChart(
 }
 
 const _useTunnelUptime = () => {
+  const config = useRuntimeConfig()
   const { environment } = useEnvironment()
   const { connections, operationalConnections, isLive } = useConnections()
 
+  const { data: telemetryData, refresh: refreshTunnel } = useFetch<{
+    tunnelLogs: TunnelLogEntry[]
+    incidents: IncidentReport[]
+    incidentMessages: []
+  }>(
+    '/api/telemetry/tunnel',
+    {
+      immediate: !config.public.mockMode,
+      query: computed(() => ({
+        environment: environment.value
+      })),
+      watch: [environment]
+    }
+  )
+
   const tunnelLogs = computed(() => {
-    const base = environment.value === 'sandbox' ? sandboxTunnelLogs : liveTunnelLogs
+    if (config.public.mockMode) {
+      const base = environment.value === 'sandbox' ? sandboxTunnelLogs : liveTunnelLogs
+      if (!isLive.value) return base
+      const allowed = new Set(operationalConnections.value.map(c => c.id))
+      return base.filter(log => allowed.has(log.connectionId))
+    }
+
+    const base = telemetryData.value?.tunnelLogs ?? []
     if (!isLive.value) return base
     const allowed = new Set(operationalConnections.value.map(c => c.id))
     return base.filter(log => allowed.has(log.connectionId))
   })
 
   const incidents = computed(() => {
-    const base = environment.value === 'sandbox' ? sandboxIncidents : liveIncidents
+    if (config.public.mockMode) {
+      const base = environment.value === 'sandbox' ? sandboxIncidents : liveIncidents
+      if (!isLive.value) return base
+      const allowed = new Set(operationalConnections.value.map(c => c.id))
+      return base.filter(inc => allowed.has(inc.connectionId))
+    }
+
+    const base = telemetryData.value?.incidents ?? []
     if (!isLive.value) return base
     const allowed = new Set(operationalConnections.value.map(c => c.id))
     return base.filter(inc => allowed.has(inc.connectionId))
   })
 
   const incidentMessages = computed(() =>
-    environment.value === 'sandbox' ? sandboxIncidentMessages : liveIncidentMessages
+    config.public.mockMode
+      ? (environment.value === 'sandbox' ? sandboxIncidentMessages : liveIncidentMessages)
+      : []
   )
 
   return {
     tunnelLogs,
     incidents,
     incidentMessages,
+    refreshTunnel,
     filterTunnelLogs: (options: TunnelLogFilters) => filterTunnelLogs(tunnelLogs.value, options),
     buildUptimeChart: (options: UptimeChartOptions) =>
       buildUptimeChart(tunnelLogs.value, connections.value, options),

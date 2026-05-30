@@ -15,6 +15,8 @@ While provides isolated environments for integration development and production.
 - The system sandbox has **no live twin** and cannot be deleted (it can be hidden via the Connections filter)
 - Ideal for onboarding, webhook testing, and first API calls
 
+For endpoint-by-endpoint testing requirements, see [Sandbox](/docs/sandbox).
+
 ## Live
 
 - Production EHR connections via isolated Sidecars

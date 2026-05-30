@@ -1,8 +1,27 @@
 import { createHmac, timingSafeEqual } from 'crypto'
 import { prisma } from '../../lib/prisma'
-import { storeWebhookEvent } from '../../utils/webhookEvents'
+import { ingestWebhookEnvelope } from '../../utils/telemetry/ingestWebhook'
+
+function verifyWebhookSignature(rawBody: Buffer, webhookSecret: string, signatureHeader: string | undefined) {
+  if (!signatureHeader) return { valid: false, reason: 'missing_signature' as const }
+
+  const expected = createHmac('sha256', webhookSecret)
+    .update(rawBody)
+    .digest('hex')
+
+  try {
+    const valid = expected.length === signatureHeader.length
+      && timingSafeEqual(Buffer.from(expected, 'utf8'), Buffer.from(signatureHeader, 'utf8'))
+    return valid
+      ? { valid: true as const }
+      : { valid: false as const, reason: 'invalid_signature' as const }
+  } catch {
+    return { valid: false, reason: 'invalid_signature' as const }
+  }
+}
 
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
   const rawBody = await readRawBody(event, false)
   if (!rawBody) {
     throw createError({ statusCode: 400, message: 'Empty body' })
@@ -28,30 +47,33 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 422, message: 'Webhook secret not configured' })
   }
 
-  let signatureValid = false
-  if (signature) {
-    const expected = createHmac('sha256', settings.webhookSecret)
-      .update(rawBody)
-      .digest('hex')
-    try {
-      signatureValid = timingSafeEqual(
-        Buffer.from(expected, 'utf8'),
-        Buffer.from(signature, 'utf8')
-      )
-    } catch {
-      signatureValid = false
+  const verification = verifyWebhookSignature(rawBody, settings.webhookSecret, signature)
+  if (!verification.valid) {
+    if (config.public.mockMode !== true && process.env.NODE_ENV !== 'production') {
+      console.warn('[webhook/while] signature rejected:', verification.reason, { orgId })
     }
+    throw createError({
+      statusCode: 401,
+      message: verification.reason === 'missing_signature'
+        ? 'Missing X-While-Signature header'
+        : 'Invalid webhook signature'
+    })
   }
 
-  if (!signatureValid) {
-    throw createError({ statusCode: 401, message: 'Invalid webhook signature' })
-  }
-
-  storeWebhookEvent(orgId, {
+  const envelope = {
     event: eventType,
-    payload,
-    signatureValid: true
-  })
+    resource: payload.resource as Record<string, unknown> | undefined,
+    connection_id: String(payload.connection_id ?? ''),
+    environment: (payload.environment === 'live' ? 'live' : 'sandbox') as 'sandbox' | 'live',
+    timestamp: String(payload.timestamp ?? new Date().toISOString()),
+    org_id: orgId,
+    method: typeof payload.method === 'string' ? payload.method : undefined,
+    path: typeof payload.path === 'string' ? payload.path : undefined,
+    status_code: typeof payload.status_code === 'number' ? payload.status_code : undefined,
+    latency_ms: typeof payload.latency_ms === 'number' ? payload.latency_ms : undefined
+  }
+
+  await ingestWebhookEnvelope(envelope)
 
   return { received: true }
 })

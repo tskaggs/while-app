@@ -15,13 +15,25 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Organization not found' })
   }
 
+  const webhookBase = config.webhookBaseUrl
+    || config.betterAuthUrl
+    || config.public.siteUrl
+    || 'http://localhost:3000'
+
   const result = await provisionOrganization(
     machineOrgId,
     org.name,
-    config.betterAuthUrl || config.public.siteUrl || 'http://localhost:3000'
+    webhookBase
   )
 
   const completed = await isOnboardingComplete(machineOrgId)
+
+  if (!completed && !result.sandboxApiKey) {
+    throw createError({
+      statusCode: 500,
+      message: 'Unable to issue a sandbox API key. Try again.'
+    })
+  }
 
   return {
     ...result,

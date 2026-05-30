@@ -108,11 +108,36 @@ function buildHistogram(
 }
 
 const _useMessages = () => {
+  const config = useRuntimeConfig()
   const { environment } = useEnvironment()
   const { operationalConnections, isLive } = useConnections()
+  const connectionScope = useState<string | undefined>('telemetry-messages-connection', () => undefined)
+
+  const { data: telemetryData, refresh: refreshMessages } = useFetch<{ messages: ProcessedMessage[] }>(
+    '/api/telemetry/messages',
+    {
+      immediate: !config.public.mockMode,
+      query: computed(() => ({
+        environment: environment.value,
+        ...(connectionScope.value ? { connectionId: connectionScope.value } : {})
+      })),
+      watch: [environment, connectionScope]
+    }
+  )
+
+  function setConnectionScope(connectionId: string | undefined) {
+    connectionScope.value = connectionId
+  }
 
   const messages = computed(() => {
-    const base = environment.value === 'sandbox' ? sandboxMessages : liveMessages
+    if (config.public.mockMode) {
+      const base = environment.value === 'sandbox' ? sandboxMessages : liveMessages
+      if (!isLive.value) return base
+      const allowed = new Set(operationalConnections.value.map(c => c.id))
+      return base.filter(m => allowed.has(m.connectionId))
+    }
+
+    const base = telemetryData.value?.messages ?? []
     if (!isLive.value) return base
     const allowed = new Set(operationalConnections.value.map(c => c.id))
     return base.filter(m => allowed.has(m.connectionId))
@@ -120,6 +145,8 @@ const _useMessages = () => {
 
   return {
     messages,
+    refreshMessages,
+    setConnectionScope,
     filterMessages: (options: MessageFilters) => filterMessages(messages.value, options),
     buildHistogram: (options: HistogramOptions) => buildHistogram(messages.value, options)
   }

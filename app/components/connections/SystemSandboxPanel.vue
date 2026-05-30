@@ -21,7 +21,7 @@ const apiBaseUrl = computed(() => config.public.whileApiUrl as string)
         </UBadge>
       </div>
       <p class="text-sm text-muted mt-1">
-        Synthetic FHIR clinic data via the control plane. No live version — use this connection to build and test integrations.
+        Synthetic FHIR clinic data via the control plane. No live version — use this connection to build and test integrations. Webhook URL and secret are configured under <NuxtLink to="/settings" class="text-primary hover:underline">Settings</NuxtLink> — see <NuxtLink to="/docs/webhooks" class="text-primary hover:underline">Webhooks</NuxtLink>.
       </p>
     </template>
     <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -53,9 +53,23 @@ POST {{ apiBaseUrl }}/v1/webhooks/trigger-mock-event</pre>
       </div>
     </dl>
     <template #footer>
-      <UButton to="/docs/getting-started" variant="outline" size="sm">
-        Developer docs
-      </UButton>
+      <div class="flex flex-wrap gap-2">
+        <UButton :to="`/connections/${connection.id}/test`" size="sm">
+          Open test suite
+        </UButton>
+        <UButton :to="`/connections/${connection.id}/credentials`" variant="outline" size="sm">
+          Manage credentials
+        </UButton>
+        <UButton to="/settings" variant="outline" size="sm">
+          Webhook settings
+        </UButton>
+        <UButton to="/docs/webhooks" variant="outline" size="sm">
+          Webhook docs
+        </UButton>
+        <UButton to="/docs/getting-started" variant="outline" size="sm">
+          Developer docs
+        </UButton>
+      </div>
     </template>
   </UCard>
 </template>

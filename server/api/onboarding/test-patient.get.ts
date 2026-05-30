@@ -1,24 +1,18 @@
 import { requireMachineOrg } from '../../utils/authSession'
 import { defaultPatientId, orgShortId } from '../../utils/provisionOrg'
-import { resolveSandboxApiKey } from '../../utils/resolveSandboxApiKey'
+import { readSandboxApiKeyFromEvent, resolveTestApiKey } from '../../utils/connectionTest'
+import { fetchWhileApi } from '../../utils/whileApiFetch'
 
 export default defineEventHandler(async (event) => {
   const { machineOrgId } = await requireMachineOrg(event)
   const config = useRuntimeConfig()
-  const providedKey = getHeader(event, 'x-sandbox-api-key')
 
-  const apiKey = await resolveSandboxApiKey(machineOrgId, providedKey)
-  if (!apiKey) {
-    throw createError({
-      statusCode: 400,
-      message: 'Sandbox API key not available. Return to step 2 and copy your key, then try again.'
-    })
-  }
+  const apiKey = await resolveTestApiKey(event, machineOrgId, readSandboxApiKeyFromEvent(event))
 
   const patientId = defaultPatientId(machineOrgId, 1)
   const apiUrl = config.whileApiUrl || 'http://localhost:8000'
 
-  const res = await fetch(`${apiUrl}/v1/patients/${patientId}`, {
+  const res = await fetchWhileApi(`${apiUrl}/v1/patients/${patientId}`, {
     headers: { Authorization: `Bearer ${apiKey}` }
   })
 
@@ -32,7 +26,7 @@ export default defineEventHandler(async (event) => {
 
   const patient = await res.json()
 
-  const catalogRes = await fetch(`${apiUrl}/v1/sandbox/catalog`, {
+  const catalogRes = await fetchWhileApi(`${apiUrl}/v1/sandbox/catalog`, {
     headers: { Authorization: `Bearer ${apiKey}` }
   })
 

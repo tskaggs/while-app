@@ -11,6 +11,14 @@ interface DashboardConnectionRecord {
   pairedConnectionId: string | null
   isHidden: boolean
   isDeletable: boolean
+  sidecarId?: string | null
+  tunnelStatus?: string
+  wireguardPublicKey?: string | null
+  ehrEndpoint?: string | null
+  ehrVendor?: string | null
+  lastSyncAt?: string | null
+  region?: string
+  messagesProcessed24h?: number
 }
 
 function mapDashboardConnection(record: DashboardConnectionRecord): Connection {
@@ -18,17 +26,17 @@ function mapDashboardConnection(record: DashboardConnectionRecord): Connection {
   return {
     id: record.id,
     partnerName: record.name,
-    ehrVendor: isSystem ? 'Other' : 'Epic',
+    ehrVendor: (record.ehrVendor as Connection['ehrVendor']) ?? (isSystem ? 'Other' : 'Epic'),
     environment: record.environment as WhileEnvironment,
     pairedConnectionId: record.pairedConnectionId ?? '',
-    sidecarId: isSystem ? 'while-sandbox' : `sidecar-${record.id.slice(-4)}`,
-    tunnelStatus: isSystem ? 'active' : 'pending',
-    wireguardPublicKey: isSystem ? 'n/a' : '—',
-    ehrEndpoint: isSystem ? 'While Control Plane Sandbox API' : 'https://sandbox.example.test/fhir/R4',
-    lastSyncAt: new Date().toISOString(),
-    flightCheck: { mtu: true, handshake: isSystem, hl7Ack: isSystem },
-    region: isSystem ? 'control-plane' : 'us-east-1',
-    messagesProcessed24h: 0
+    sidecarId: record.sidecarId ?? (isSystem ? 'while-sandbox' : `sidecar-${record.id.slice(-4)}`),
+    tunnelStatus: (record.tunnelStatus as TunnelStatus) ?? (isSystem ? 'active' : 'pending'),
+    wireguardPublicKey: record.wireguardPublicKey ?? (isSystem ? 'n/a' : '—'),
+    ehrEndpoint: record.ehrEndpoint ?? (isSystem ? 'While Control Plane Sandbox API' : 'https://sandbox.example.test/fhir/R4'),
+    lastSyncAt: record.lastSyncAt ?? new Date().toISOString(),
+    flightCheck: { mtu: true, handshake: isSystem || record.tunnelStatus === 'active', hl7Ack: isSystem || record.tunnelStatus === 'active' },
+    region: record.region ?? (isSystem ? 'control-plane' : 'us-east-1'),
+    messagesProcessed24h: record.messagesProcessed24h ?? 0
   }
 }
 

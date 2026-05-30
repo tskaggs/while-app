@@ -77,11 +77,12 @@ Prisma manages Better Auth tables plus dashboard app tables (`dashboard_connecti
 
 ```bash
 pnpm db:generate   # regenerate client after schema changes
-pnpm db:migrate    # apply migrations
+pnpm db:migrate    # apply migrations (run after ultra-a Postgres is up)
+pnpm db:migrate:dev  # author new migrations only (shared DB may show ultra-a drift)
 pnpm db:push       # push schema without migration (dev only)
 ```
 
-Machine-plane tables (`organizations`, `api_keys`, `sandbox_settings`) live in the same database and are written by the dashboard during onboarding. ultra-a owns the schema baseline — see `ultra-a/scripts/init.sql`.
+Machine-plane tables (`organizations`, `api_keys`, `sandbox_settings`) share the same database with ultra-a. The first Prisma migration includes their baseline so migrations apply on a fresh or Docker-init DB.
 
 ## Auth & organization model
 

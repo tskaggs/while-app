@@ -130,7 +130,9 @@ model MachineOrganization {
 
   apiKeys              ApiKey[]
   sandboxSettings      SandboxSettings?
+  sandboxProfile       OrgSandboxProfile?
   dashboardConnections DashboardConnection[]
+  connectionRequests   ConnectionRequest[]
   orgOnboarding        OrgOnboarding?
   processedMessages    ProcessedMessage[]
   integrationLogs      IntegrationLog[]
@@ -192,11 +194,124 @@ model DashboardConnection {
   messagesProcessed24h Int       @default(0) @map("messages_processed_24h")
   webhookUrl           String?   @map("webhook_url")
   webhookSecret        String?   @map("webhook_secret")
+  provisioningStatus   String    @default("active") @map("provisioning_status")
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  organization    MachineOrganization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  fieldMappings   ConnectionFieldMapping[]
+  requiredData    ConnectionRequiredData?
+  wireguardPeer   ConnectionWireguardPeer?
+  provisioningJob ProvisioningJob?
+
+  @@map("dashboard_connections")
+}
+
+model OrgSandboxProfile {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId                  String   @unique @map("org_id") @db.Uuid
+  ehrVendor              String   @default("Other") @map("ehr_vendor")
+  dataFormat             String   @default("fhir") @map("data_format")
+  resourceTypes          Json     @default("[\"Patient\"]") @map("resource_types")
+  suggestedFieldsVersion String   @default("1") @map("suggested_fields_version")
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
-  @@map("dashboard_connections")
+  @@map("org_sandbox_profiles")
+}
+
+model ConnectionFieldMapping {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId          String   @map("org_id") @db.Uuid
+  connectionId   String   @map("connection_id")
+  sourcePath     String   @map("source_path")
+  targetFhirPath String   @map("target_fhir_path")
+  status         String   @default("suggested")
+  isRequired     Boolean  @default(false) @map("is_required")
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  connection DashboardConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, sourcePath])
+  @@index([orgId, connectionId])
+  @@map("connection_field_mappings")
+}
+
+model ConnectionRequiredData {
+  connectionId String    @id @map("connection_id")
+  orgId        String    @map("org_id") @db.Uuid
+  ehrEndpoint  String?   @map("ehr_endpoint")
+  ehrVendor    String?   @map("ehr_vendor")
+  customFields Json      @default("{}") @map("custom_fields")
+  completedAt  DateTime? @map("completed_at") @db.Timestamptz
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  connection DashboardConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@map("connection_required_data")
+}
+
+model ConnectionRequest {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId           String   @map("org_id") @db.Uuid
+  partnerName     String   @map("partner_name")
+  ehrVendor       String   @map("ehr_vendor")
+  contactEmail    String   @map("contact_email")
+  targetGoLive    String   @map("target_go_live")
+  scope           String
+  resourceTypes   Json     @default("[]") @map("resource_types")
+  dataFormat      String   @map("data_format")
+  environment     String
+  estimatedVolume String   @map("estimated_volume")
+  notes           String?
+  status          String   @default("pending")
+  connectionId    String?  @map("connection_id")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, status])
+  @@map("connection_requests")
+}
+
+model ConnectionWireguardPeer {
+  connectionId  String   @id @map("connection_id")
+  orgId         String   @map("org_id") @db.Uuid
+  publicKey     String   @map("public_key")
+  privateKeyRef String?  @map("private_key_ref")
+  endpoint      String?
+  allowedIps    String   @default("10.8.0.0/24") @map("allowed_ips")
+  peerConfig    Json     @default("{}") @map("peer_config")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  connection DashboardConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@map("connection_wireguard_peers")
+}
+
+model ProvisioningJob {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId        String    @map("org_id") @db.Uuid
+  connectionId String    @unique @map("connection_id")
+  jobType      String    @map("job_type")
+  status       String    @default("queued")
+  vmId         String?   @map("vm_id")
+  errorMessage String?   @map("error_message")
+  startedAt    DateTime? @map("started_at") @db.Timestamptz
+  completedAt  DateTime? @map("completed_at") @db.Timestamptz
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  connection DashboardConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, status])
+  @@map("provisioning_jobs")
 }
 
 model ProcessedMessage {

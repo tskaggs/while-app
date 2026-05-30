@@ -58,6 +58,7 @@ export interface Connection {
   flightCheck: FlightCheck
   region: string
   messagesProcessed24h: number
+  provisioningStatus?: 'ready' | 'pending_customer' | 'provisioning' | 'active' | 'error'
   /** Present on Live connections — gates Live-only views when not activated */
   liveActivation?: LiveActivation
 }

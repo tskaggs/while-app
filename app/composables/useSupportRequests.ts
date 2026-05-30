@@ -106,28 +106,54 @@ const _useSupportRequests = () => {
 
     requests.value = [newRequest, ...requests.value]
 
-    addPendingConnection({
-      id: `conn-pending-${id}`,
-      partnerName: form.partnerName,
-      ehrVendor: form.ehrVendor,
-      environment: form.environment,
-      pairedConnectionId: `conn-pending-pair-${id}`,
-      sidecarId: `sidecar-pending-${id.slice(-4)}`,
-      tunnelStatus: 'pending',
-      wireguardPublicKey: 'Pending provisioning...',
-      ehrEndpoint: 'Pending configuration',
-      lastSyncAt: new Date().toISOString(),
-      flightCheck: { mtu: false, handshake: false, hl7Ack: false },
-      region: 'us-east-1',
-      messagesProcessed24h: 0
-    })
+    if (!useRuntimeConfig().public.mockMode) {
+      void $fetch('/api/connection-requests', {
+        method: 'POST',
+        body: {
+          partnerName: form.partnerName,
+          ehrVendor: form.ehrVendor,
+          contactEmail: form.contactEmail,
+          targetGoLive: form.targetGoLive,
+          scope: form.scope,
+          resourceTypes: form.resourceTypes,
+          dataFormat: form.dataFormat,
+          environment: form.environment,
+          estimatedVolume: form.estimatedVolume,
+          notes: form.notes
+        }
+      }).then(() => {
+        toast.add({
+          title: 'Connection request submitted',
+          description: 'Provisioning started — configure mappings while your sandbox is prepared.',
+          color: 'success'
+        })
+      }).catch(() => {
+        toast.add({ title: 'Connection request failed', color: 'error' })
+      })
+    } else {
+      addPendingConnection({
+        id: `conn-pending-${id}`,
+        partnerName: form.partnerName,
+        ehrVendor: form.ehrVendor,
+        environment: form.environment,
+        pairedConnectionId: `conn-pending-pair-${id}`,
+        sidecarId: `sidecar-pending-${id.slice(-4)}`,
+        tunnelStatus: 'pending',
+        wireguardPublicKey: 'Pending provisioning...',
+        ehrEndpoint: 'Pending configuration',
+        lastSyncAt: new Date().toISOString(),
+        flightCheck: { mtu: false, handshake: false, hl7Ack: false },
+        region: 'us-east-1',
+        messagesProcessed24h: 0
+      })
 
-    toast.add({
-      title: 'Support request submitted',
-      description: `Request ${id.toUpperCase()} — our team will reach out within 1 business day.`,
-      color: 'success',
-      icon: 'i-iconoir-check-circle'
-    })
+      toast.add({
+        title: 'Support request submitted',
+        description: `Request ${id.toUpperCase()} — our team will reach out within 1 business day.`,
+        color: 'success',
+        icon: 'i-iconoir-check-circle'
+      })
+    }
 
     return `connection:${id}`
   }

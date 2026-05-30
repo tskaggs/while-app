@@ -234,6 +234,33 @@ const alertMeta = computed(() => {
       body: 'p-0'
     }"
   >
+    <UAlert
+      v-if="connection.provisioningStatus === 'provisioning'"
+      color="info"
+      variant="subtle"
+      class="m-4 mb-0"
+      title="Sandbox provisioning in progress"
+      description="Configure mappings while your sidecar VM is being prepared."
+    />
+    <UAlert
+      v-else-if="connection.provisioningStatus === 'pending_customer'"
+      color="warning"
+      variant="subtle"
+      class="m-4 mb-0"
+      title="Customer data required"
+    >
+      <template #description>
+        Complete required fields on the
+        <NuxtLink :to="`/connections/${connection.id}/mapping`" class="text-primary hover:underline">
+          Mapping
+        </NuxtLink>
+        and
+        <NuxtLink :to="`/connections/${connection.id}/connectivity`" class="text-primary hover:underline">
+          Connectivity
+        </NuxtLink>
+        tabs.
+      </template>
+    </UAlert>
     <div
       class="topology-canvas relative px-4 py-8 sm:px-6 sm:py-10"
     >

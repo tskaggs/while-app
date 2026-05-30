@@ -212,6 +212,7 @@ function openMessageDetail(message: ReturnType<typeof filterMessages>[number]) {
           placeholder="Search messages..."
           class="w-full sm:flex-1 sm:min-w-48"
         />
+        <LiveMonitoringToggle />
         <UButton
           icon="i-iconoir-refresh-double"
           variant="outline"

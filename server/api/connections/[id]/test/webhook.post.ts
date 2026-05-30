@@ -1,5 +1,4 @@
 import { requireMachineOrg } from '../../../../utils/authSession'
-import { prisma } from '../../../../lib/prisma'
 import { defaultPatientId } from '../../../../utils/provisionOrg'
 import {
   assertConnectionAccess,
@@ -8,6 +7,7 @@ import {
   resolveTestApiKey
 } from '../../../../utils/connectionTest'
 import { getLatestWebhookDelivery } from '../../../../utils/webhookDelivery'
+import { loadConnectionWebhookConfig } from '../../../../utils/connectionWebhook'
 import { getRecentWebhookEvents, getLatestProcessedMessage } from '../../../../utils/telemetry/ingestWebhook'
 import { fetchWhileApi } from '../../../../utils/whileApiFetch'
 
@@ -79,7 +79,7 @@ export default defineEventHandler(async (event) => {
   const webhookEvent = body?.event ?? 'patient.admitted'
   const apiUrl = config.whileApiUrl || 'http://localhost:8000'
 
-  const settings = await prisma.sandboxSettings.findUnique({ where: { orgId: machineOrgId } })
+  const { resolved } = await loadConnectionWebhookConfig(machineOrgId, connection.id)
   const triggerStartedAt = new Date()
 
   const res = await fetchWhileApi(`${apiUrl}/v1/webhooks/trigger-mock-event`, {
@@ -127,13 +127,15 @@ export default defineEventHandler(async (event) => {
             success: delivery.success,
             statusCode: delivery.statusCode,
             errorMessage: delivery.errorMessage,
-            webhookUrl: settings?.webhookUrl ?? null
+            webhookUrl: resolved.webhookUrl,
+            urlSource: resolved.urlSource
           }
         : {
             success: false,
             statusCode: null,
             errorMessage: 'No delivery record found — check ultra-a logs',
-            webhookUrl: settings?.webhookUrl ?? null
+            webhookUrl: resolved.webhookUrl,
+            urlSource: resolved.urlSource
           },
       received,
       message

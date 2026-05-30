@@ -7,6 +7,7 @@ useSeoMeta({ title: 'Overview' })
   <div class="space-y-6">
     <PageHeader title="Overview">
       <template #actions>
+        <LiveMonitoringToggle />
         <UButton
           to="/support"
           label="Support"

@@ -1,51 +1,74 @@
 ---
 title: Webhooks
-description: Configure your webhook URL, verify signed deliveries with your webhook secret, and receive FHIR events from While.
+description: Configure org defaults and per-connection webhook overrides, verify signed deliveries, and receive FHIR events from While.
 ---
 
 # Webhooks
 
-While delivers normalized FHIR R4 events to an **HTTPS endpoint you configure**. Each delivery is signed with your **webhook secret** so you can verify it came from While before processing.
+While delivers normalized FHIR R4 events to an **HTTPS endpoint you configure**. Each delivery is signed with a **webhook secret** so you can verify it came from While before processing.
+
+## Two-tier configuration
+
+Webhook URL and secret use **org defaults** with optional **per-connection overrides**. A `null` override means inherit the org default.
+
+| Field | Org default (`Settings`) | Connection override (`Test` tab) |
+|-------|--------------------------|----------------------------------|
+| URL | Default webhook destination | Optional custom URL |
+| Secret | From onboarding (`whsec_*`) | Optional custom secret (rotate on Test tab) |
+
+**Effective values** (used by ultra-a delivery and signature verification):
+
+```
+effective_url    = connection.webhook_url ?? org.webhook_url
+effective_secret = connection.webhook_secret ?? org.webhook_secret
+```
+
+### Integration patterns
+
+| Pattern | Setup | How to route |
+|---------|-------|--------------|
+| **One app, many connections** | Set org URL + secret in Settings only; leave connections on “Inherit org default” | Single endpoint; use `connection_id` in each payload |
+| **One app per connection** | Set custom URL + secret on each connection’s Test page | Each connection POSTs to its own app with its own secret |
+| **Mixed** | Org default for most connections; override specific rows | ultra-a resolves per event from `connection_id` |
 
 ## Where settings live
 
-Webhook configuration is **organization-scoped**. It is **not** shown on the connection **Overview** page (which lists Connection ID, API base URL, and integration metrics for the While Sandbox connection).
-
 | Credential / setting | Where to find it |
 |----------------------|------------------|
-| **Webhook URL** | **Settings → Webhook URL** |
-| **Webhook secret** | Onboarding **Step 2 — Sandbox credentials** (shown **once**, `whsec_*`) |
-| **Connection ID** | Onboarding Step 2, connection Overview, or the `connection_id` field in each webhook payload |
+| **Org default webhook URL** | **Settings → Default webhook destination** |
+| **Connection webhook URL / secret** | Connection **Test** tab (inherit toggle, override fields, rotate secret) |
+| **Org webhook secret** | Onboarding **Step 2 — Sandbox credentials** (shown **once**, `whsec_*`) |
+| **Connection ID** | Overview, Test tab, or `connection_id` in each webhook payload |
 | **Sandbox API key** | Onboarding Step 2 (shown once, `wh_test_*`) — used to **trigger** test events, not to verify inbound webhooks |
 
-Save the webhook secret when it is displayed during onboarding. Like the sandbox API key, the plaintext secret is not shown again in Settings.
+Save webhook secrets when they are displayed. Plaintext secrets are not shown again after save (connection overrides can be rotated on the Test tab).
 
 ## How to use webhooks
 
-### 1. Set your webhook URL
+### 1. Set your org default webhook URL
 
-In the dashboard, open **Settings → Webhook URL** and enter a public **HTTPS** endpoint your application controls, for example:
+In the dashboard, open **Settings → Default webhook destination** and enter a public **HTTPS** endpoint your application controls, for example:
 
 ```
 https://your-app.com/webhooks/while
 ```
 
-While sends **HTTP POST** requests to this URL for sandbox events (clinical mocks, tunnel simulation, API activity) and for live Sidecar events once connections are active.
+This URL applies to **all connections that inherit the org default**. The target connection is identified inside each payload by `connection_id` (for example `conn-sa-{org_short_id}` for the system sandbox).
 
-The URL applies to your **organization**, not to an individual connection row in the dashboard. The target connection is identified inside each payload by `connection_id` (for example `conn-sa-{org_short_id}` for the system sandbox).
+To send a specific connection’s events elsewhere, open that connection’s **Test** tab, turn off **Inherit org default**, and save a connection URL (and optional connection secret).
 
 ### 2. Store your webhook secret
 
-During onboarding **Step 2**, copy the **Webhook secret** (`whsec_…`) alongside your sandbox API key. You need this secret on your server to verify `X-While-Signature` on every inbound request.
+During onboarding **Step 2**, copy the **Webhook secret** (`whsec_…`) alongside your sandbox API key. You need the **effective** secret for each connection on your server to verify `X-While-Signature`.
 
-Treat it like a password: store it in a secrets manager or environment variable (for example `WHILE_WEBHOOK_SECRET`), not in client-side code or source control.
+Treat secrets like passwords: store them in a secrets manager or environment variable (for example `WHILE_WEBHOOK_SECRET`), not in client-side code or source control.
 
 ### 3. Implement a signed webhook receiver
 
 Your endpoint must:
 
 1. Read the **raw request body** as bytes or a string **before** parsing JSON.
-2. Compute HMAC-SHA256 of that raw body using your webhook secret.
+2. Compute HMAC-SHA256 of that raw body using your webhook secret (org default or per-connection, matching how the connection is configured in While).
 3. Compare the result (hex-encoded) to the `X-While-Signature` header using a constant-time comparison.
 4. Parse the JSON payload and process the event.
 5. Respond with **2xx** promptly so While can record successful delivery.
@@ -140,7 +163,7 @@ Do **not** verify using the sandbox API key (`wh_test_*`). API keys authenticate
 
 ### 4. Trigger a test delivery (sandbox)
 
-Use your sandbox API key to queue a mock event. While delivers it to the webhook URL from Settings:
+Use your sandbox API key to queue a mock event. While delivers it to the **effective** URL for the system sandbox connection (org default unless overridden):
 
 ```bash
 curl -s -X POST \
@@ -152,7 +175,7 @@ curl -s -X POST \
 
 The **202** response includes `connection_id` and `envelope_preview` showing the payload While will POST to your URL.
 
-You can also use onboarding **Step 4** (“Send test webhook”) or the [Sandbox](/docs/sandbox) guide for a dashboard-driven test.
+You can also use onboarding **Step 4**, a connection **Test** tab (“Send test webhook”), or the [Sandbox](/docs/sandbox) guide for a dashboard-driven test.
 
 ### 5. Confirm delivery
 
@@ -213,6 +236,6 @@ If delivery fails, check that your URL is reachable over HTTPS, returns 2xx, and
 
 ## Related docs
 
-- [Onboarding](/docs/onboarding) — where you receive your webhook secret
+- [Onboarding](/docs/onboarding) — where you receive your org webhook secret
 - [Sandbox](/docs/sandbox) — triggering test events and sandbox prerequisites
 - [Error Codes](/docs/error-codes) — missing URL/secret and signature failures

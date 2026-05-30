@@ -2,6 +2,12 @@
 const props = defineProps<{
   connectionId: string
   webhookUrl: string | null
+  orgDefaultWebhookUrl?: string | null
+  connectionWebhookUrl?: string | null
+  inheritsDefault?: boolean
+  urlSource?: 'org' | 'connection' | null
+  hasCustomSecret?: boolean
+  webhookSecretConfigured?: boolean
   siteReceiverUrl: string
   dockerReceiverUrl: string
   webhookUrlNeedsDockerFix?: boolean
@@ -15,7 +21,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  webhookSaved: [url: string]
+  webhookSaved: [payload: { effectiveUrl: string | null, inheritsDefault: boolean }]
 }>()
 
 const toast = useToast()
@@ -33,6 +39,7 @@ interface TestWebhookDelivery {
   statusCode: number | null
   errorMessage: string | null
   webhookUrl: string | null
+  urlSource?: 'org' | 'connection' | null
 }
 
 interface TestWebhookResult {
@@ -42,8 +49,12 @@ interface TestWebhookResult {
   message?: TestWebhookMessage | null
 }
 
-const webhookUrlInput = ref(props.webhookUrl ?? '')
+const inheritOrgDefault = ref(props.inheritsDefault !== false)
+const overrideUrlInput = ref(props.connectionWebhookUrl ?? props.webhookUrl ?? '')
+const overrideSecretInput = ref('')
+const revealedSecret = ref<string | null>(null)
 const webhookSaving = ref(false)
+const secretRotating = ref(false)
 const verifyTab = ref<'verify' | 'trigger'>('verify')
 
 const eventType = ref('patient.admitted')
@@ -53,10 +64,30 @@ const webhookError = ref<string | null>(null)
 const webhookStatus = ref<number | null>(null)
 const webhookResult = ref<TestWebhookResult | null>(null)
 
+const effectiveUrl = computed(() => {
+  if (inheritOrgDefault.value) {
+    return props.orgDefaultWebhookUrl ?? props.webhookUrl
+  }
+  return overrideUrlInput.value.trim() || null
+})
+
+const effectiveUrlSource = computed(() => {
+  if (inheritOrgDefault.value) return 'org' as const
+  if (overrideUrlInput.value.trim()) return 'connection' as const
+  return props.urlSource ?? null
+})
+
+const urlSourceLabel = computed(() => {
+  if (effectiveUrlSource.value === 'connection') return 'Connection override'
+  if (effectiveUrlSource.value === 'org') return 'Org default'
+  return 'Not configured'
+})
+
 const dockerLocalhostWarning = computed(() => {
-  if (props.webhookUrlNeedsDockerFix || isLocalhostUrl(webhookUrlInput.value)) {
+  const url = effectiveUrl.value
+  if (props.webhookUrlNeedsDockerFix || isLocalhostUrl(url)) {
     return {
-      current: webhookUrlInput.value.trim() || props.webhookUrl,
+      current: url,
       suggested: props.dockerReceiverUrl
     }
   }
@@ -74,20 +105,33 @@ function isLocalhostUrl(url: string | null | undefined) {
 }
 
 function applyDockerWebhookUrl() {
-  webhookUrlInput.value = props.dockerReceiverUrl
+  inheritOrgDefault.value = false
+  overrideUrlInput.value = props.dockerReceiverUrl
 }
 
-async function saveDockerWebhookUrl() {
-  webhookUrlInput.value = props.dockerReceiverUrl
-  await saveWebhookUrl()
-}
+watch(() => props.inheritsDefault, (value) => {
+  inheritOrgDefault.value = value !== false
+})
+
+watch(() => props.connectionWebhookUrl, (url) => {
+  if (url) overrideUrlInput.value = url
+})
 
 watch(() => props.webhookUrl, (url) => {
-  webhookUrlInput.value = url ?? ''
+  if (props.inheritsDefault !== false && url) {
+    overrideUrlInput.value = url
+  }
 })
 
 watch(() => props.samplePatientId, (id) => {
   patientId.value = id
+})
+
+watch(inheritOrgDefault, (inherits) => {
+  if (inherits) {
+    overrideSecretInput.value = ''
+    revealedSecret.value = null
+  }
 })
 
 const eventOptions = [
@@ -105,25 +149,81 @@ async function copy(text: string, label: string) {
   }
 }
 
-async function saveWebhookUrl() {
+async function saveWebhookConfig() {
   webhookSaving.value = true
   try {
     if (props.mockMode) {
-      toast.add({ title: 'Webhook URL saved (mock mode)', color: 'success' })
-      emit('webhookSaved', webhookUrlInput.value)
+      toast.add({ title: 'Webhook settings saved (mock mode)', color: 'success' })
+      emit('webhookSaved', {
+        effectiveUrl: effectiveUrl.value,
+        inheritsDefault: inheritOrgDefault.value
+      })
       return
     }
 
-    await $fetch('/api/settings/webhook', {
-      method: 'POST',
-      body: { webhookUrl: webhookUrlInput.value }
+    if (inheritOrgDefault.value) {
+      await $fetch(`/api/connections/${props.connectionId}/webhook`, {
+        method: 'POST',
+        body: { inheritDefault: true }
+      })
+    } else {
+      const body: { webhookUrl?: string, webhookSecret?: string } = {
+        webhookUrl: overrideUrlInput.value.trim()
+      }
+      const secret = overrideSecretInput.value.trim()
+      if (secret) {
+        body.webhookSecret = secret
+      }
+      await $fetch(`/api/connections/${props.connectionId}/webhook`, {
+        method: 'POST',
+        body
+      })
+      overrideSecretInput.value = ''
+    }
+
+    toast.add({ title: 'Webhook settings saved', color: 'success' })
+    emit('webhookSaved', {
+      effectiveUrl: effectiveUrl.value,
+      inheritsDefault: inheritOrgDefault.value
     })
-    toast.add({ title: 'Webhook URL saved', color: 'success' })
-    emit('webhookSaved', webhookUrlInput.value)
   } catch {
-    toast.add({ title: 'Failed to save webhook URL', color: 'error' })
+    toast.add({ title: 'Failed to save webhook settings', color: 'error' })
   } finally {
     webhookSaving.value = false
+  }
+}
+
+async function saveDockerWebhookUrl() {
+  inheritOrgDefault.value = false
+  overrideUrlInput.value = props.dockerReceiverUrl
+  await saveWebhookConfig()
+}
+
+async function rotateConnectionSecret() {
+  secretRotating.value = true
+  try {
+    if (props.mockMode) {
+      revealedSecret.value = 'whsec_mock_rotated_secret'
+      inheritOrgDefault.value = false
+      toast.add({ title: 'Connection secret rotated (mock mode)', color: 'success' })
+      return
+    }
+
+    const res = await $fetch<{ webhookSecret: string }>(
+      `/api/connections/${props.connectionId}/webhook/rotate-secret`,
+      { method: 'POST' }
+    )
+    inheritOrgDefault.value = false
+    revealedSecret.value = res.webhookSecret
+    toast.add({ title: 'Connection secret rotated — copy it now', color: 'success' })
+    emit('webhookSaved', {
+      effectiveUrl: effectiveUrl.value,
+      inheritsDefault: false
+    })
+  } catch {
+    toast.add({ title: 'Failed to rotate connection secret', color: 'error' })
+  } finally {
+    secretRotating.value = false
   }
 }
 
@@ -177,18 +277,21 @@ async function sendTestWebhook() {
         Webhooks
       </h3>
       <p class="text-sm text-muted mt-1">
-        Webhook URL is organization-scoped. Each delivery includes
-        <code class="font-mono text-xs">connection_id: {{ connectionId }}</code>
-        so your receiver can route events to the right integration.
+        Set an org default in
+        <NuxtLink to="/settings" class="text-primary hover:underline">
+          Settings
+        </NuxtLink>,
+        or override URL and secret for this connection. Each delivery includes
+        <code class="font-mono text-xs">connection_id: {{ connectionId }}</code>.
       </p>
     </template>
 
     <ol class="list-decimal list-inside space-y-2 text-sm text-muted mb-6">
       <li>
-        Set your webhook URL below (or use While's built-in receiver for dashboard Messages).
+        Configure where events for this connection are delivered (inherit org default or override).
       </li>
       <li>
-        Store your webhook secret from onboarding (<code class="font-mono text-xs">whsec_*</code>).
+        Store the effective webhook secret (org default from onboarding, or a per-connection secret).
       </li>
       <li>
         Verify <code class="font-mono text-xs">X-While-Signature</code> on every inbound POST.
@@ -199,18 +302,93 @@ async function sendTestWebhook() {
     </ol>
 
     <div class="space-y-4">
-      <UFormField label="Current webhook URL">
-        <div class="flex flex-col gap-2 sm:flex-row">
+      <div class="rounded-lg border border-default p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p class="text-sm font-medium text-highlighted">
+              Effective destination
+            </p>
+            <p v-if="effectiveUrl" class="text-xs text-muted font-mono break-all mt-1">
+              {{ effectiveUrl }}
+            </p>
+            <p v-else class="text-xs text-muted mt-1">
+              No URL configured — set an org default in Settings or a connection override below.
+            </p>
+          </div>
+          <UBadge variant="subtle" :color="effectiveUrl ? 'primary' : 'neutral'">
+            {{ urlSourceLabel }}
+          </UBadge>
+        </div>
+        <p v-if="!webhookSecretConfigured" class="text-xs text-warning">
+          Webhook secret not configured for this connection.
+        </p>
+      </div>
+
+      <UCheckbox
+        v-model="inheritOrgDefault"
+        label="Inherit org default webhook destination"
+      />
+      <p v-if="inheritOrgDefault && orgDefaultWebhookUrl" class="text-xs text-muted -mt-2">
+        Org default:
+        <code class="font-mono">{{ orgDefaultWebhookUrl }}</code>
+      </p>
+      <p v-else-if="inheritOrgDefault" class="text-xs text-muted -mt-2">
+        No org default URL yet —
+        <NuxtLink to="/settings" class="text-primary hover:underline">configure in Settings</NuxtLink>.
+      </p>
+
+      <template v-if="!inheritOrgDefault">
+        <UFormField label="Connection webhook URL">
           <UInput
-            v-model="webhookUrlInput"
+            v-model="overrideUrlInput"
             placeholder="https://your-app.com/webhooks/while"
-            class="flex-1 font-mono text-sm"
+            class="font-mono text-sm"
           />
-          <UButton :loading="webhookSaving" @click="saveWebhookUrl">
-            Save
+        </UFormField>
+
+        <UFormField label="Connection webhook secret (optional paste)">
+          <UInput
+            v-model="overrideSecretInput"
+            type="password"
+            placeholder="whsec_…"
+            class="font-mono text-sm"
+            autocomplete="off"
+          />
+          <p class="text-xs text-muted mt-1">
+            Leave blank to keep the current secret. Org secret is not used when this connection has a custom secret.
+          </p>
+        </UFormField>
+
+        <div class="flex flex-wrap gap-2">
+          <UButton
+            variant="outline"
+            size="sm"
+            :loading="secretRotating"
+            @click="rotateConnectionSecret"
+          >
+            Rotate connection secret
           </UButton>
         </div>
-      </UFormField>
+
+        <UAlert
+          v-if="revealedSecret"
+          color="warning"
+          variant="subtle"
+          title="Copy your new connection secret now"
+        >
+          <template #description>
+            <code class="font-mono text-xs break-all">{{ revealedSecret }}</code>
+          </template>
+        </UAlert>
+
+        <p v-else-if="hasCustomSecret" class="text-xs text-muted">
+          This connection uses a custom secret (not shown again after save).
+        </p>
+      </template>
+
+      <UButton :loading="webhookSaving" @click="saveWebhookConfig">
+        Save webhook settings
+      </UButton>
 
       <UAlert
         v-if="dockerLocalhostWarning"
@@ -358,7 +536,8 @@ async function sendTestWebhook() {
                 ?? 'ultra-a could not reach your webhook URL. If ultra-a runs in Docker, save host.docker.internal instead of localhost, then retry.'"
             />
             <p v-if="webhookResult.delivery.webhookUrl" class="text-xs text-muted font-mono break-all">
-              Configured URL: {{ webhookResult.delivery.webhookUrl }}
+              Effective URL ({{ webhookResult.delivery.urlSource === 'connection' ? 'connection override' : 'org default' }}):
+              {{ webhookResult.delivery.webhookUrl }}
             </p>
           </div>
 
@@ -399,9 +578,9 @@ async function sendTestWebhook() {
             v-else-if="!webhookResult.delivery?.success"
             class="text-sm text-muted"
           >
-            Fix the webhook URL above (use
+            Fix the effective webhook URL (use
             <code class="font-mono text-xs">{{ dockerReceiverUrl }}</code>
-            when ultra-a runs in Docker), click Save, then send the test again.
+            when ultra-a runs in Docker), save settings, then send the test again.
           </p>
         </div>
       </div>

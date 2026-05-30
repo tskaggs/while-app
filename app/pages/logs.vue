@@ -107,6 +107,7 @@ useSeoMeta({ title: 'Logs' })
           placeholder="Search logs..."
           class="w-full sm:w-56"
         />
+        <LiveMonitoringToggle />
         <UButton
           :icon="anonymize ? 'i-iconoir-eye-off' : 'i-iconoir-eye'"
           :label="anonymize ? 'PHI anonymized' : 'PHI visible'"

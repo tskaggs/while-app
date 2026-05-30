@@ -158,6 +158,7 @@ function openLogDetail(log: ReturnType<typeof filterTunnelLogs>[number]) {
           placeholder="Search tunnel logs..."
           class="w-full sm:w-56"
         />
+        <LiveMonitoringToggle />
         <UBadge color="neutral" variant="subtle">
           {{ filteredLogs.length.toLocaleString() }} logs
         </UBadge>

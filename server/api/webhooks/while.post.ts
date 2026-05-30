@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'crypto'
 import { prisma } from '../../lib/prisma'
 import { ingestWebhookEnvelope } from '../../utils/telemetry/ingestWebhook'
+import { resolveEffectiveWebhookSecret } from '../../utils/webhookResolve'
 
 function verifyWebhookSignature(rawBody: Buffer, webhookSecret: string, signatureHeader: string | undefined) {
   if (!signatureHeader) return { valid: false, reason: 'missing_signature' as const }
@@ -42,15 +43,30 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Missing org_id in payload' })
   }
 
-  const settings = await prisma.sandboxSettings.findUnique({ where: { orgId } })
-  if (!settings?.webhookSecret) {
+  const connectionId = typeof payload.connection_id === 'string' ? payload.connection_id : ''
+
+  const [settings, connection] = await Promise.all([
+    prisma.sandboxSettings.findUnique({ where: { orgId } }),
+    connectionId
+      ? prisma.dashboardConnection.findFirst({
+          where: { id: connectionId, orgId }
+        })
+      : Promise.resolve(null)
+  ])
+
+  const webhookSecret = resolveEffectiveWebhookSecret(
+    settings?.webhookSecret,
+    connection?.webhookSecret
+  )
+
+  if (!webhookSecret) {
     throw createError({ statusCode: 422, message: 'Webhook secret not configured' })
   }
 
-  const verification = verifyWebhookSignature(rawBody, settings.webhookSecret, signature)
+  const verification = verifyWebhookSignature(rawBody, webhookSecret, signature)
   if (!verification.valid) {
     if (config.public.mockMode !== true && process.env.NODE_ENV !== 'production') {
-      console.warn('[webhook/while] signature rejected:', verification.reason, { orgId })
+      console.warn('[webhook/while] signature rejected:', verification.reason, { orgId, connectionId })
     }
     throw createError({
       statusCode: 401,
@@ -63,7 +79,7 @@ export default defineEventHandler(async (event) => {
   const envelope = {
     event: eventType,
     resource: payload.resource as Record<string, unknown> | undefined,
-    connection_id: String(payload.connection_id ?? ''),
+    connection_id: connectionId,
     environment: (payload.environment === 'live' ? 'live' : 'sandbox') as 'sandbox' | 'live',
     timestamp: String(payload.timestamp ?? new Date().toISOString()),
     org_id: orgId,

@@ -190,6 +190,8 @@ model DashboardConnection {
   lastSyncAt           DateTime? @map("last_sync_at") @db.Timestamptz
   region               String    @default("control-plane")
   messagesProcessed24h Int       @default(0) @map("messages_processed_24h")
+  webhookUrl           String?   @map("webhook_url")
+  webhookSecret        String?   @map("webhook_secret")
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)

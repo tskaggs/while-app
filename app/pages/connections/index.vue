@@ -62,6 +62,7 @@ useSeoMeta({ title: 'Connections' })
           class="w-full sm:w-44"
         />
         <UCheckbox v-model="showSystemSandbox" label="Show system sandbox" />
+        <LiveMonitoringToggle />
         <UBadge color="neutral" variant="subtle">
           {{ filtered.length }} in {{ environmentLabel }}
         </UBadge>

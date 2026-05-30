@@ -80,15 +80,22 @@ export default defineEventHandler(async (event) => {
     rollupByDate.set(key, existing)
   }
 
-  const chartData = [...rollupByDate.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, data]) => ({
+  const chartDays: string[] = []
+  for (let i = 13; i >= 0; i--) {
+    const day = new Date(Date.now() - i * 86400000)
+    chartDays.push(day.toISOString().slice(0, 10))
+  }
+
+  const chartData = chartDays.map((date) => {
+    const data = rollupByDate.get(date) ?? { messages: 0, fhir: 0, uptime: 100, byConnection: {} }
+    return {
       date,
       messages: data.messages,
       fhirResources: data.fhir,
       uptime: data.uptime,
       byConnection: data.byConnection
-    }))
+    }
+  })
 
   return { stats, chartData }
 })

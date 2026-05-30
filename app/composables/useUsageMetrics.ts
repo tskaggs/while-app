@@ -1,6 +1,7 @@
 import { createSharedComposable } from '@vueuse/core'
 import {
   attachConnectionBreakdown,
+  normalizeChartBreakdown,
   sandboxUsageStats,
   liveUsageStats,
   sandboxUsageChart,
@@ -38,7 +39,7 @@ const _useUsageMetrics = () => {
       return attachConnectionBreakdown(base, operationalConnections.value)
     }
     const base = telemetryData.value?.chartData ?? []
-    return attachConnectionBreakdown(base, operationalConnections.value)
+    return normalizeChartBreakdown(base, operationalConnections.value)
   })
 
   return { stats, chartData, refreshMetrics }

@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
     "db:generate": "npx auth@latest generate --output prisma/auth-schema.prisma --yes && echo 'Merge auth-schema into schema.prisma manually if needed' && prisma generate",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
     "db:push": "prisma db push"
   },
   "dependencies": {

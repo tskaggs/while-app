@@ -57,23 +57,44 @@ const rangeMs: Record<LogTimeRange, number> = {
 }
 
 const _useLogs = () => {
+  const config = useRuntimeConfig()
   const { environment } = useEnvironment()
   const { operationalConnections, isLive } = useConnections()
   const anonymize = ref(true)
+  const timeRange = ref<LogTimeRange>('24h')
+
+  const { data: telemetryData, refresh: refreshLogs } = useFetch<{ logs: LogEntry[] }>(
+    '/api/telemetry/logs',
+    {
+      immediate: !config.public.mockMode,
+      query: computed(() => ({
+        environment: environment.value,
+        timeRange: timeRange.value
+      })),
+      watch: [environment, timeRange]
+    }
+  )
 
   const rawLogs = computed(() => {
-    const integration = environment.value === 'sandbox' ? sandboxLogs : liveLogs
-    const tunnel = (environment.value === 'sandbox' ? sandboxTunnelLogs : liveTunnelLogs)
-      .map(tunnelToLogEntry)
-    const audit = (environment.value === 'sandbox' ? sandboxAuditLogs : liveAuditLogs)
-      .map(entry => auditToLogEntry(entry))
+    if (config.public.mockMode) {
+      const integration = environment.value === 'sandbox' ? sandboxLogs : liveLogs
+      const tunnel = (environment.value === 'sandbox' ? sandboxTunnelLogs : liveTunnelLogs)
+        .map(tunnelToLogEntry)
+      const audit = (environment.value === 'sandbox' ? sandboxAuditLogs : liveAuditLogs)
+        .map(entry => auditToLogEntry(entry))
 
-    const merged = [...integration, ...tunnel, ...audit]
-      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+      const merged = [...integration, ...tunnel, ...audit]
+        .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
 
-    if (!isLive.value) return merged
+      if (!isLive.value) return merged
+      const allowed = new Set(operationalConnections.value.map(c => c.id))
+      return merged.filter(log => log.connectionId === '—' || allowed.has(log.connectionId))
+    }
+
+    const base = telemetryData.value?.logs ?? []
+    if (!isLive.value) return base
     const allowed = new Set(operationalConnections.value.map(c => c.id))
-    return merged.filter(log => log.connectionId === '—' || allowed.has(log.connectionId))
+    return base.filter(log => log.connectionId === '—' || allowed.has(log.connectionId))
   })
 
   const displayLogs = computed<DisplayLogEntry[]>(() =>
@@ -136,6 +157,8 @@ const _useLogs = () => {
     logs: rawLogs,
     displayLogs,
     anonymize,
+    timeRange,
+    refreshLogs,
     filterLogs,
     getLog,
     categoryLabel,

@@ -8,15 +8,21 @@ import {
 import type { UsageDataPoint } from '~/types/while'
 
 const _useOverviewChart = () => {
+  const config = useRuntimeConfig()
   const { environment } = useEnvironment()
   const { operationalConnections, isLive } = useConnections()
+  const { tunnelLogs: liveTunnelData } = useTunnelUptime()
 
-  const tunnelLogs = computed(() => {
+  const mockTunnelLogs = computed(() => {
     const base = environment.value === 'sandbox' ? sandboxTunnelLogs : liveTunnelLogs
     if (!isLive.value) return base
     const allowed = new Set(operationalConnections.value.map(c => c.id))
     return base.filter(log => allowed.has(log.connectionId))
   })
+
+  const tunnelLogs = computed(() =>
+    config.public.mockMode ? mockTunnelLogs.value : liveTunnelData.value
+  )
 
   function enrichPoints(points: UsageDataPoint[]): UsageDataPoint[] {
     return points.map((point, index) => {
@@ -25,16 +31,22 @@ const _useOverviewChart = () => {
 
       if (!operationalConnections.value.length) return point
 
+      if (!config.public.mockMode && point.uptime > 0) {
+        return point
+      }
+
       let uptimeSum = 0
       operationalConnections.value.forEach((connection, seed) => {
         const baseline = getConnectionBaseline(connection.tunnelStatus, seed + index)
-        uptimeSum += computeUptimePercent(
-          tunnelLogs.value,
-          connection.id,
-          bucketStart,
-          bucketEndMs,
-          baseline
-        )
+        uptimeSum += tunnelLogs.value.length
+          ? computeUptimePercent(
+              tunnelLogs.value,
+              connection.id,
+              bucketStart,
+              bucketEndMs,
+              baseline
+            )
+          : baseline
       })
 
       const computedUptime = Math.round((uptimeSum / operationalConnections.value.length) * 10) / 10

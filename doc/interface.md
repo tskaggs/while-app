@@ -22,6 +22,7 @@ The experience is a single-page application built with **Nuxt 4** and **Nuxt UI 
 - **Sign in** — `/login` (email + password via Better Auth)
 - **Sign up** — `/signup` (creates user + organization)
 - **Session** — `authClient.useSession()`; global middleware redirects unauthenticated users
+- **Onboarding gate** — `onboarding.global.ts` calls `/api/org/status` via `useRequestFetch()` so SSR forwards session cookies; do not use plain `$fetch` for authenticated internal API calls in middleware
 - **User menu** — real name/email, sign out, settings link
 - **Team invites** — `/accept-invitation/{id}`; dev-mode links in Settings
 

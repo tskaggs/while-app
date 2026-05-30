@@ -1,0 +1,69 @@
+import { requireMachineOrg } from '../../../../utils/authSession'
+import { prisma } from '../../../../lib/prisma'
+import {
+  assertConnectionAccess,
+  isSystemSandboxConnection,
+  samplePatientIdForOrg
+} from '../../../../utils/connectionTest'
+import { dockerReceiverUrl, isLocalhostWebhookUrl, siteReceiverUrl } from '../../../../utils/webhookUrl'
+
+const MOCK_KEY_PREFIX = 'wh_test_mock'
+
+export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
+  const connectionId = getRouterParam(event, 'id')
+
+  if (!connectionId) {
+    throw createError({ statusCode: 400, message: 'Connection id is required' })
+  }
+
+  const siteUrl = config.public.siteUrl || config.betterAuthUrl || 'http://localhost:3000'
+  const receiverUrl = siteReceiverUrl(siteUrl)
+  const dockerUrl = dockerReceiverUrl(siteUrl)
+
+  if (config.public.mockMode) {
+    const apiBaseUrl = config.public.whileApiUrl || 'http://localhost:8000'
+    const isSystemSandbox = connectionId.startsWith('conn-sa') || connectionId.includes('sandbox')
+
+    return {
+      connectionId,
+      partnerName: isSystemSandbox ? 'While Sandbox' : 'North Valley Clinic',
+      isSystemSandbox,
+      apiBaseUrl,
+      webhookUrl: receiverUrl,
+      webhookSecretConfigured: true,
+      samplePatientId: 'pat_mock0001_01',
+      keyPrefix: MOCK_KEY_PREFIX,
+      siteReceiverUrl: receiverUrl,
+      dockerReceiverUrl: dockerUrl,
+      webhookUrlNeedsDockerFix: false
+    }
+  }
+
+  const { machineOrgId } = await requireMachineOrg(event)
+  const connection = await assertConnectionAccess(machineOrgId, connectionId)
+
+  const [settings, keys] = await Promise.all([
+    prisma.sandboxSettings.findUnique({ where: { orgId: machineOrgId } }),
+    prisma.apiKey.findFirst({
+      where: { orgId: machineOrgId, environment: 'sandbox', isActive: true },
+      orderBy: { createdAt: 'desc' }
+    })
+  ])
+
+  const apiBaseUrl = config.whileApiUrl || 'http://localhost:8000'
+
+  return {
+    connectionId: connection.id,
+    partnerName: connection.name,
+    isSystemSandbox: isSystemSandboxConnection(connection),
+    apiBaseUrl,
+    webhookUrl: settings?.webhookUrl ?? null,
+    webhookSecretConfigured: Boolean(settings?.webhookSecret),
+    samplePatientId: samplePatientIdForOrg(machineOrgId),
+    keyPrefix: keys?.keyPrefix ?? null,
+    siteReceiverUrl: receiverUrl,
+    dockerReceiverUrl: dockerUrl,
+    webhookUrlNeedsDockerFix: isLocalhostWebhookUrl(settings?.webhookUrl)
+  }
+})

@@ -9,7 +9,7 @@ import type {
 const { filterMessages, buildHistogram } = useMessages()
 const { connections, operationalConnections, isLive } = useConnections()
 
-const selectedDate = ref('2026-05-20')
+const selectedDate = ref(new Date().toISOString().slice(0, 10))
 const granularity = ref<MessageGranularity>('hour')
 const selectedHour = ref<number | undefined>(undefined)
 const connectionFilter = ref<string | undefined>()

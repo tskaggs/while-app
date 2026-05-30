@@ -132,6 +132,11 @@ model MachineOrganization {
   sandboxSettings      SandboxSettings?
   dashboardConnections DashboardConnection[]
   orgOnboarding        OrgOnboarding?
+  processedMessages    ProcessedMessage[]
+  integrationLogs      IntegrationLog[]
+  tunnelLogs           TunnelLog[]
+  tunnelIncidents      TunnelIncident[]
+  dailyMetricRollups   DailyMetricRollup[]
 
   @@map("organizations")
 }
@@ -144,6 +149,7 @@ model ApiKey {
   environment String   @db.VarChar(10)
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz
 
   organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
@@ -168,25 +174,148 @@ model SandboxSettings {
 // --- Dashboard app extensions ---
 
 model DashboardConnection {
-  id                 String   @id
-  orgId              String   @map("org_id") @db.Uuid
-  name               String
-  connectionType     String   @map("connection_type")
-  environment        String
-  pairedConnectionId String?  @map("paired_connection_id")
-  isHidden           Boolean  @default(false) @map("is_hidden")
-  isDeletable        Boolean  @default(true) @map("is_deletable")
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  id                   String    @id
+  orgId                String    @map("org_id") @db.Uuid
+  name                 String
+  connectionType       String    @map("connection_type")
+  environment          String
+  pairedConnectionId   String?   @map("paired_connection_id")
+  isHidden             Boolean   @default(false) @map("is_hidden")
+  isDeletable          Boolean   @default(true) @map("is_deletable")
+  sidecarId            String?   @map("sidecar_id")
+  tunnelStatus         String    @default("pending") @map("tunnel_status")
+  wireguardPublicKey   String?   @map("wireguard_public_key")
+  ehrEndpoint          String?   @map("ehr_endpoint")
+  ehrVendor            String?   @map("ehr_vendor")
+  lastSyncAt           DateTime? @map("last_sync_at") @db.Timestamptz
+  region               String    @default("control-plane")
+  messagesProcessed24h Int       @default(0) @map("messages_processed_24h")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@map("dashboard_connections")
 }
 
+model ProcessedMessage {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId         String   @map("org_id") @db.Uuid
+  connectionId  String   @map("connection_id")
+  partnerName   String   @map("partner_name")
+  environment   String
+  timestamp     DateTime @db.Timestamptz
+  direction     String
+  format        String
+  messageType   String   @map("message_type")
+  resourceType  String?  @map("resource_type")
+  status        String
+  summary       String
+  correlationId String?  @map("correlation_id")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, environment, timestamp])
+  @@index([orgId, connectionId, timestamp])
+  @@map("processed_messages")
+}
+
+model IntegrationLog {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId             String   @map("org_id") @db.Uuid
+  connectionId      String   @map("connection_id")
+  partnerName       String   @map("partner_name")
+  environment       String
+  timestamp         DateTime @db.Timestamptz
+  severity          String
+  category          String
+  message           String
+  anonymizedMessage String   @map("anonymized_message")
+  resourceType      String?  @map("resource_type")
+  eventType         String?  @map("event_type")
+  hl7MessageType    String?  @map("hl7_message_type")
+  correlationId     String?  @map("correlation_id")
+  durationMs        Int?     @map("duration_ms")
+  statusCode        Int?     @map("status_code")
+  actor             String?
+  ipAddress         String?  @map("ip_address")
+  source            String?
+  details           String?
+  metadata          Json     @default("{}")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, environment, timestamp])
+  @@index([orgId, category, timestamp])
+  @@map("integration_logs")
+}
+
+model TunnelLog {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId        String   @map("org_id") @db.Uuid
+  connectionId String   @map("connection_id")
+  partnerName  String   @map("partner_name")
+  environment  String
+  timestamp    DateTime @db.Timestamptz
+  severity     String
+  eventType    String   @map("event_type")
+  message      String
+  incidentId   String?  @map("incident_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, environment, timestamp])
+  @@index([orgId, connectionId, timestamp])
+  @@map("tunnel_logs")
+}
+
+model TunnelIncident {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId         String    @map("org_id") @db.Uuid
+  connectionId  String    @map("connection_id")
+  partnerName   String    @map("partner_name")
+  environment   String
+  title         String
+  summary       String
+  severity      String
+  status        String
+  startedAt     DateTime  @map("started_at") @db.Timestamptz
+  resolvedAt    DateTime? @map("resolved_at") @db.Timestamptz
+  relatedLogIds String[]  @default([]) @map("related_log_ids")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, environment])
+  @@map("tunnel_incidents")
+}
+
+model DailyMetricRollup {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId         String   @map("org_id") @db.Uuid
+  connectionId  String   @map("connection_id")
+  environment   String
+  date          DateTime @db.Date
+  messageCount  Int      @default(0) @map("message_count")
+  fhirResources Int      @default(0) @map("fhir_resources")
+  uptimePct     Float    @default(100) @map("uptime_pct")
+  tunnelEvents  Int      @default(0) @map("tunnel_events")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, connectionId, environment, date])
+  @@index([orgId, environment, date])
+  @@map("daily_metric_rollups")
+}
+
 model OrgOnboarding {
-  orgId         String    @id @map("org_id") @db.Uuid
-  completedAt   DateTime? @map("completed_at") @db.Timestamptz
-  apiKeyShownAt DateTime? @map("api_key_shown_at") @db.Timestamptz
+  orgId              String    @id @map("org_id") @db.Uuid
+  completedAt        DateTime? @map("completed_at") @db.Timestamptz
+  apiKeyShownAt      DateTime? @map("api_key_shown_at") @db.Timestamptz
+  pendingSandboxKey  String?   @map("pending_sandbox_key")
 
   organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 

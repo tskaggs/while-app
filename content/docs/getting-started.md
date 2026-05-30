@@ -22,23 +22,21 @@ Operator sign-in uses **Better Auth** (email + password) at `/login`. Machine AP
 
 ## Control plane API authentication
 
-All control plane API requests require a Bearer token:
+All control plane API requests require a Bearer token against `https://api.while.health`:
 
 ```bash
 # List sample patient IDs for your org
 curl -s -H "Authorization: Bearer wh_test_your_key" \
-  http://localhost:8000/v1/patients | jq .
+  https://api.while.health/v1/patients | jq .
 
 # Fetch a synthetic FHIR Patient
 curl -s -H "Authorization: Bearer wh_test_your_key" \
-  http://localhost:8000/v1/patients/pat_00000000_01 | jq .
+  https://api.while.health/v1/patients/pat_00000000_01 | jq .
 
 # Onboarding metadata (connection ID, example payloads)
 curl -s -H "Authorization: Bearer wh_test_your_key" \
-  http://localhost:8000/v1/sandbox/catalog | jq .
+  https://api.while.health/v1/sandbox/catalog | jq .
 ```
-
-Local development uses the **ultra-a** FastAPI backend at `http://localhost:8000` (`WHILE_API_URL`).
 
 ## Environments
 
@@ -49,4 +47,4 @@ Local development uses the **ultra-a** FastAPI backend at `http://localhost:8000
 
 The dashboard environment switcher filters your **view** of connections and metrics. The API key prefix determines which environment the control plane enforces.
 
-See [Environments](/docs/environments) and [Onboarding](/docs/onboarding) for details.
+See [Environments](/docs/environments), [Sandbox](/docs/sandbox), and [Onboarding](/docs/onboarding) for details.

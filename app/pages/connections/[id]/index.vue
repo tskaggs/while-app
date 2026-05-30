@@ -26,7 +26,12 @@ useConnectionPageMeta()
               Messages (24h)
             </dt>
             <dd class="text-lg font-semibold text-highlighted">
-              {{ connection.messagesProcessed24h.toLocaleString() }}
+              <NuxtLink
+                :to="`/connections/${connection.id}/messages`"
+                class="hover:underline"
+              >
+                {{ connection.messagesProcessed24h.toLocaleString() }}
+              </NuxtLink>
             </dd>
           </div>
           <div>

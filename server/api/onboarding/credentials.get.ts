@@ -34,6 +34,13 @@ export default defineEventHandler(async (event) => {
 
   const { sandboxApiKey, keyRegenerated } = await resolveOnboardingSandboxKey(machineOrgId)
 
+  if (!completed && !sandboxApiKey) {
+    throw createError({
+      statusCode: 500,
+      message: 'Unable to issue a sandbox API key. Try again or contact support.'
+    })
+  }
+
   return {
     provisioned: true,
     onboardingComplete: completed,

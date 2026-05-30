@@ -43,10 +43,12 @@ const navItems: NavigationMenuItem[] = [{
         <UNavigationMenu
           :items="navItems"
           orientation="horizontal"
+          variant="link"
+          color="neutral"
           class="while-top-nav-pills"
           :ui="{
             list: 'gap-0.5',
-            link: 'px-3 py-1.5 text-sm font-medium',
+            link: 'while-top-nav-link flex-col items-stretch px-3 py-1.5 text-sm font-medium',
             linkLeadingIcon: 'hidden'
           }"
         />
@@ -75,10 +77,12 @@ const navItems: NavigationMenuItem[] = [{
       <UNavigationMenu
         :items="navItems"
         orientation="horizontal"
+        variant="link"
+        color="neutral"
         class="while-top-nav-pills min-w-max"
         :ui="{
           list: 'gap-0.5',
-          link: 'px-3 py-1.5 text-xs font-medium whitespace-nowrap',
+          link: 'while-top-nav-link flex-col items-stretch px-3 py-1.5 text-xs font-medium whitespace-nowrap',
           linkLeadingIcon: 'hidden'
         }"
       />

@@ -292,11 +292,29 @@ You can smoke-test ultra-a without the dashboard using the seed key above. Dashb
 | `GET /api/onboarding/test-patient` | Calls ultra-a patients + catalog |
 | `POST /api/onboarding/test-webhook` | Calls ultra-a trigger-mock-event |
 | `POST /api/onboarding/complete` | Marks onboarding done; clears pending key |
-| `POST /api/webhooks/while` | Receives ultra-a deliveries |
+| `POST /api/webhooks/while` | Receives ultra-a deliveries; ingests telemetry |
 | `GET /api/org/status` | Reads org, keys, connections from DB |
 | `GET /api/connections` | Lists `dashboard_connections` for machine org |
+| `GET /api/telemetry/messages` | Dashboard messages (persisted) |
+| `GET /api/telemetry/logs` | Dashboard logs |
+| `GET /api/telemetry/tunnel` | Tunnel uptime data |
+| `GET /api/telemetry/metrics` | Overview KPIs + chart |
 
 Auth catch-all: `/api/auth/[...all]` → Better Auth handler (`server/lib/auth.ts`).
+
+---
+
+## Telemetry tables (while-app Prisma)
+
+| Table | Purpose |
+|-------|---------|
+| `processed_messages` | Messages view + throughput |
+| `integration_logs` | Logs view (integration, tunnel, webhook, api) |
+| `tunnel_logs` | Tunnel uptime view |
+| `tunnel_incidents` | Simulated disconnect incidents |
+| `daily_metric_rollups` | Overview chart aggregates |
+
+Populated by `ingestWebhookEnvelope()` when ultra-a delivers webhooks. No historical backfill on provision — data accumulates via cron and API activity.
 
 ---
 
@@ -317,5 +335,7 @@ This integration version adds:
 - Server-proxied onboarding API calls and HMAC webhook receiver
 - Sandbox key rotation for incomplete onboarding recovery
 - Shared Postgres on port **5433** via ultra-a Docker Compose
+- Persisted dashboard telemetry (messages, logs, tunnel uptime, metrics) from webhook ingest
+- ultra-a tunnel/sidecar simulation + `api.request` webhooks
 
-Future work (not in this version): live key provisioning, production deploy wiring, webhook retry UI, tunnel events in ultra-a Phase 1 catalog.
+Future work (not in this version): live key provisioning UI, production deploy wiring, webhook retry UI, real Firecracker Data Plane.

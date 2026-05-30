@@ -104,34 +104,38 @@ html:not(.dark) a[data-color="primary"] {
   color: #FAFAFA;
 }
 
-/* Top pill navigation */
-.while-top-nav-pills [data-slot="link"][data-active="true"] {
-  border-radius: 9999px;
+/* Top navigation — active item uses logo-style accent line (Nuxt UI: .text-highlighted on active link) */
+.while-top-nav-pills .while-top-nav-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  border-radius: 0;
+  background-color: transparent;
 }
 
-html:not(.dark) .while-top-nav-pills [data-slot="link"][data-active="true"] {
-  background-color: #18181B;
-  color: #FAFAFA;
+.while-top-nav-pills .while-top-nav-link::before {
+  display: none;
 }
 
-html.dark .while-top-nav-pills [data-slot="link"][data-active="true"] {
-  background-color: #FAFAFA;
-  color: #09090B;
+.while-top-nav-pills .while-top-nav-link.text-highlighted::after {
+  content: '';
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background-color: var(--while-accent);
 }
 
-.while-top-nav-pills [data-slot="link"]:not([data-active="true"]) {
+html.dark .while-top-nav-pills .while-top-nav-link.text-highlighted::after {
+  background-color: var(--color-while-500);
+}
+
+.while-top-nav-pills .while-top-nav-link.text-muted {
   color: var(--ui-text-muted);
-  border-radius: 9999px;
 }
 
-html:not(.dark) .while-top-nav-pills [data-slot="link"]:not([data-active="true"]):hover {
+.while-top-nav-pills .while-top-nav-link.text-muted:hover {
   color: var(--ui-text-highlighted);
-  background-color: rgb(228 228 231 / 0.75);
-}
-
-html.dark .while-top-nav-pills [data-slot="link"]:not([data-active="true"]):hover {
-  color: var(--ui-text-highlighted);
-  background-color: rgb(39 39 42 / 0.6);
 }
 
 /* Chart surface (hero throughput card) */

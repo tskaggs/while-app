@@ -5,7 +5,7 @@ description: HTTP status codes and error responses from the While API.
 
 # Error Codes
 
-The control plane (ultra-a FastAPI) uses standard HTTP status codes. Errors return a JSON `detail` string.
+The While control plane API uses standard HTTP status codes. Errors return a JSON `detail` string.
 
 ## Control plane errors
 

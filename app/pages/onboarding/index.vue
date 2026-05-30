@@ -4,9 +4,12 @@ import { authClient } from '~/lib/auth-client'
 definePageMeta({ layout: 'auth' })
 
 const config = useRuntimeConfig()
+const route = useRoute()
+const requestFetch = useRequestFetch()
 const step = ref(1)
 const loading = ref(false)
 const error = ref('')
+const statusReady = ref(false)
 
 const provision = ref<{
   orgId: string
@@ -21,10 +24,17 @@ const provision = ref<{
 
 const keySaved = ref(false)
 const keyRegenerated = ref(false)
+const loadingKey = ref(false)
 const resumeSetup = ref(false)
 const patientResult = ref<{ patient: unknown; patientId: string; catalog: unknown } | null>(null)
-const webhookResult = ref<{ trigger: unknown; received: unknown[] } | null>(null)
+const webhookResult = ref<{
+  trigger: unknown
+  received: unknown[]
+  message?: { id: string, connectionId: string, summary: string, timestamp: string } | null
+} | null>(null)
 const snippetTab = ref('curl')
+
+const { refreshMessages } = useMessages()
 
 const inviteEmail = ref('')
 const inviteRole = ref<'owner' | 'admin' | 'member'>('member')
@@ -38,7 +48,8 @@ const sandboxApiKeyValue = computed(() => provision.value?.sandboxApiKey ?? '')
 
 const sandboxApiKeyDisplay = computed(() => {
   if (sandboxApiKeyValue.value) return sandboxApiKeyValue.value
-  return 'Generating a new sandbox API key…'
+  if (loadingKey.value) return 'Loading sandbox API key…'
+  return 'Sandbox API key unavailable — generate a new key below'
 })
 
 type ProvisionPayload = {
@@ -50,6 +61,15 @@ type ProvisionPayload = {
   samplePatientId: string
   alreadyProvisioned: boolean
   keyRegenerated?: boolean
+}
+
+function redirectDestination() {
+  const redirect = route.query.redirect
+  return typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/'
+}
+
+async function redirectAfterOnboarding() {
+  await navigateTo(redirectDestination())
 }
 
 function applyProvisionResult(creds: ProvisionPayload) {
@@ -123,40 +143,74 @@ function downloadCredentialsCsv() {
 }
 
 async function refreshCredentials() {
-  const creds = await $fetch<{
-    provisioned: boolean
-    onboardingComplete?: boolean
-    orgId?: string
-    orgName?: string
-    sandboxApiKey?: string
-    webhookSecret?: string
-    connectionId?: string
-    samplePatientId?: string
-    alreadyProvisioned?: boolean
-    keyRegenerated?: boolean
-  }>('/api/onboarding/credentials')
+  loadingKey.value = true
+  error.value = ''
+  try {
+    const creds = await requestFetch<{
+      provisioned: boolean
+      onboardingComplete?: boolean
+      orgId?: string
+      orgName?: string
+      sandboxApiKey?: string
+      webhookSecret?: string
+      connectionId?: string
+      samplePatientId?: string
+      alreadyProvisioned?: boolean
+      keyRegenerated?: boolean
+    }>('/api/onboarding/credentials')
 
-  if (!creds.provisioned || creds.onboardingComplete) return false
+    if (creds.onboardingComplete) {
+      await redirectAfterOnboarding()
+      return false
+    }
 
-  applyProvisionResult({
-    orgId: creds.orgId!,
-    orgName: creds.orgName!,
-    sandboxApiKey: creds.sandboxApiKey ?? '',
-    webhookSecret: creds.webhookSecret ?? '',
-    connectionId: creds.connectionId!,
-    samplePatientId: creds.samplePatientId!,
-    alreadyProvisioned: true,
-    keyRegenerated: creds.keyRegenerated
-  })
-  resumeSetup.value = true
-  return true
+    if (!creds.provisioned) return false
+
+    applyProvisionResult({
+      orgId: creds.orgId!,
+      orgName: creds.orgName!,
+      sandboxApiKey: creds.sandboxApiKey ?? '',
+      webhookSecret: creds.webhookSecret ?? '',
+      connectionId: creds.connectionId!,
+      samplePatientId: creds.samplePatientId!,
+      alreadyProvisioned: true,
+      keyRegenerated: creds.keyRegenerated
+    })
+    resumeSetup.value = true
+    return true
+  } catch (e: unknown) {
+    const fetchError = e as { data?: { message?: string }, message?: string }
+    error.value = fetchError.data?.message ?? fetchError.message ?? 'Could not load sandbox credentials'
+    return false
+  } finally {
+    loadingKey.value = false
+  }
+}
+
+async function ensureSandboxKey() {
+  if (step.value !== 2 || sandboxApiKeyValue.value) return
+  await refreshCredentials()
 }
 
 async function runProvision() {
   loading.value = true
   error.value = ''
   try {
-    const result = await $fetch<ProvisionPayload>('/api/onboarding/provision', { method: 'POST' })
+    const result = await $fetch<ProvisionPayload & { onboardingComplete?: boolean }>(
+      '/api/onboarding/provision',
+      { method: 'POST' }
+    )
+
+    if (result.onboardingComplete) {
+      await redirectAfterOnboarding()
+      return
+    }
+
+    if (!result.sandboxApiKey) {
+      error.value = 'Unable to issue a sandbox API key. Try again.'
+      return
+    }
+
     applyProvisionResult(result)
     resumeSetup.value = result.alreadyProvisioned
     step.value = 2
@@ -199,7 +253,12 @@ async function testWebhook() {
   loading.value = true
   error.value = ''
   try {
-    webhookResult.value = await $fetch('/api/onboarding/test-webhook', {
+    const result = await $fetch<{
+      trigger: unknown
+      received: unknown[]
+      delivery?: { success: boolean }
+      message?: { id: string, connectionId: string, summary: string, timestamp: string } | null
+    }>('/api/onboarding/test-webhook', {
       method: 'POST',
       body: {
         event: 'patient.admitted',
@@ -207,6 +266,10 @@ async function testWebhook() {
         apiKey
       }
     })
+    webhookResult.value = result
+    if (result.delivery?.success && result.message) {
+      await refreshMessages()
+    }
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Webhook test failed'
   } finally {
@@ -238,11 +301,11 @@ async function sendInvite() {
 async function finishOnboarding() {
   loading.value = true
   try {
-    await $fetch('/api/onboarding/complete', {
+    await requestFetch('/api/onboarding/complete', {
       method: 'POST',
       body: { apiKeyAcknowledged: keySaved.value }
     })
-    await navigateTo('/')
+    await redirectAfterOnboarding()
   } finally {
     loading.value = false
   }
@@ -289,26 +352,27 @@ onMounted(async () => {
     if (restored) {
       step.value = 2
     }
-  } catch {
-    // Fresh onboarding — stay on step 1
+  } finally {
+    statusReady.value = true
   }
 })
 
-watch(step, async (nextStep) => {
-  if (nextStep !== 2 || sandboxApiKeyValue.value) return
-  try {
-    await refreshCredentials()
-  } catch {
-    // Ignore — user may need to re-run provision
+watch(step, (nextStep) => {
+  if (nextStep === 2) {
+    void ensureSandboxKey()
   }
-})
+}, { immediate: true })
 
 useSeoMeta({ title: 'Onboarding' })
 </script>
 
 <template>
   <div class="min-h-screen bg-default p-6">
-    <div class="mx-auto max-w-3xl space-y-6">
+    <div v-if="!statusReady" class="mx-auto flex max-w-3xl items-center justify-center py-24">
+      <UIcon name="i-iconoir-refresh-double" class="size-6 animate-spin text-muted" />
+    </div>
+
+    <div v-else class="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 class="text-2xl font-semibold text-highlighted">
           Welcome to While
@@ -437,9 +501,19 @@ useSeoMeta({ title: 'Onboarding' })
             </div>
           </UFormField>
           <UCheckbox v-model="keySaved" label="I've saved my API key" />
-          <UButton :disabled="!keySaved || !sandboxApiKeyValue" @click="step = 3">
-            Continue
-          </UButton>
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              v-if="!sandboxApiKeyValue"
+              variant="outline"
+              :loading="loadingKey"
+              @click="ensureSandboxKey"
+            >
+              Generate sandbox API key
+            </UButton>
+            <UButton :disabled="!keySaved || !sandboxApiKeyValue" @click="step = 3">
+              Continue
+            </UButton>
+          </div>
         </div>
       </UCard>
 
@@ -486,9 +560,15 @@ useSeoMeta({ title: 'Onboarding' })
           </div>
           <pre class="text-xs overflow-auto rounded-lg border border-default p-3 bg-muted/30">{{ snippetTab === 'curl' ? curlSnippet : snippetTab === 'ts' ? tsSnippet : webhookSnippet }}</pre>
 
-          <UButton :loading="loading" variant="outline" @click="testWebhook">
-            Send test webhook
-          </UButton>
+          <div class="flex flex-wrap gap-2">
+            <UButton :loading="loading" variant="outline" @click="testWebhook">
+              Send test webhook
+            </UButton>
+
+            <UButton @click="step = 5">
+              Continue
+            </UButton>
+          </div>
 
           <div v-if="webhookResult">
             <p class="text-sm font-medium text-highlighted mb-2">
@@ -499,11 +579,18 @@ useSeoMeta({ title: 'Onboarding' })
               Received at your webhook URL
             </p>
             <pre v-if="webhookResult.received.length" class="text-xs overflow-auto rounded-lg border border-default p-3 bg-muted/30 max-h-32">{{ JSON.stringify(webhookResult.received[0], null, 2) }}</pre>
+            <UAlert
+              v-if="webhookResult.received.length && !webhookResult.message"
+              class="mt-3"
+              color="warning"
+              variant="subtle"
+              title="Ingest OK but no Messages row"
+              description="Use a clinical event such as patient.admitted. Tunnel-only events appear under Logs, not Messages."
+            />
+            <p v-if="webhookResult.message" class="text-sm text-muted mt-3">
+              Processed message: {{ webhookResult.message.summary }}
+            </p>
           </div>
-
-          <UButton @click="step = 5">
-            Continue
-          </UButton>
         </div>
       </UCard>
 
@@ -527,9 +614,6 @@ useSeoMeta({ title: 'Onboarding' })
               ]" />
             </UFormField>
           </div>
-          <UButton variant="outline" :loading="loading" @click="sendInvite">
-            Send invite
-          </UButton>
           <div v-if="inviteLinks.length" class="space-y-2">
             <p class="text-sm text-muted">
               Dev-mode invite links (also logged to server console):
@@ -538,9 +622,14 @@ useSeoMeta({ title: 'Onboarding' })
               {{ link.email }} ({{ link.role }}): {{ link.url }}
             </div>
           </div>
-          <UButton :loading="loading" @click="finishOnboarding">
-            Finish onboarding
-          </UButton>
+          <div class="flex flex-wrap gap-2">
+            <UButton variant="outline" :loading="loading" @click="sendInvite">
+              Send invite
+            </UButton>
+            <UButton :loading="loading" @click="finishOnboarding">
+              Finish onboarding
+            </UButton>
+          </div>
         </div>
       </UCard>
     </div>

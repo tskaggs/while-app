@@ -1,4 +1,48 @@
--- Better-Auth + dashboard app tables (does not alter existing control-plane tables)
+-- Better-Auth + dashboard app tables
+--
+-- Machine-plane baseline (mirrors ultra-a/scripts/init.sql) so Prisma shadow DB
+-- migrations succeed without requiring ultra-a Docker init first.
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE IF NOT EXISTS organizations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    metadata JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS api_keys (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    hashed_key CHAR(64) NOT NULL UNIQUE,
+    key_prefix VARCHAR(12) NOT NULL,
+    environment VARCHAR(10) NOT NULL CHECK (environment IN ('sandbox', 'live')),
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS sandbox_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id UUID NOT NULL UNIQUE REFERENCES organizations(id) ON DELETE CASCADE,
+    webhook_url TEXT,
+    webhook_secret TEXT,
+    cron_enabled BOOLEAN NOT NULL DEFAULT true,
+    cron_interval_seconds INT NOT NULL DEFAULT 300,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_keys_hashed_key_active
+    ON api_keys (hashed_key)
+    WHERE is_active = true;
+
+CREATE INDEX IF NOT EXISTS idx_sandbox_settings_org_id
+    ON sandbox_settings (org_id);
+
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS metadata JSONB NOT NULL DEFAULT '{}';
+
+-- Better Auth (AuthN) — table name "organization" is distinct from machine-plane "organizations"
 
 CREATE TABLE IF NOT EXISTS "user" (
     "id" TEXT NOT NULL,

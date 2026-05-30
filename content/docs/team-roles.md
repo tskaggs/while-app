@@ -21,10 +21,10 @@ All three roles have **equivalent permissions** until role-based access control 
 
 Owners can invite teammates from **Settings → Team** or during onboarding step 5.
 
-In development, invitation emails are not sent — invite links are logged to the server console and displayed in the Settings UI.
+Invitees receive an email with a link to accept. You can also copy pending invite links from **Settings → Team**.
 
 Accept invitations at `/accept-invitation/{id}` after signing in.
 
 ## Organization linking
 
-Better Auth stores organizations in the `organization` table. The machine plane uses `organizations` (plural) with the **same UUID** for API key and webhook provisioning.
+Your dashboard organization is linked to your control plane organization ID, which scopes API keys, webhooks, and sandbox data to your account.

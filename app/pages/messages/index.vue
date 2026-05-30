@@ -169,6 +169,7 @@ function openMessageDetail(message: ReturnType<typeof filterMessages>[number]) {
           placeholder="Search messages..."
           class="w-full sm:w-56"
         />
+        <LiveMonitoringToggle />
         <UBadge color="neutral" variant="subtle">
           {{ filteredMessages.length.toLocaleString() }} messages
         </UBadge>

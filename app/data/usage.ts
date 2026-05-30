@@ -48,6 +48,22 @@ export function attachConnectionBreakdown(
   })
 }
 
+/** Ensure every connection has a series key; preserve API rollup counts. */
+export function normalizeChartBreakdown(
+  points: UsageDataPoint[],
+  connections: Pick<Connection, 'id'>[]
+): UsageDataPoint[] {
+  return points.map(point => ({
+    ...point,
+    byConnection: Object.fromEntries(
+      connections.map(connection => [
+        connection.id,
+        point.byConnection?.[connection.id] ?? 0
+      ])
+    )
+  }))
+}
+
 export const sandboxUsageStats: UsageStat[] = [
   {
     title: 'Active Connections',

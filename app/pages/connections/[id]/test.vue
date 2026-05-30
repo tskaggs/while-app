@@ -4,7 +4,12 @@ interface TestContext {
   partnerName: string
   isSystemSandbox: boolean
   apiBaseUrl: string
+  orgDefaultWebhookUrl?: string | null
+  connectionWebhookUrl?: string | null
   webhookUrl: string | null
+  inheritsDefault?: boolean
+  urlSource?: 'org' | 'connection' | null
+  hasCustomSecret?: boolean
   webhookSecretConfigured: boolean
   samplePatientId: string
   keyPrefix: string | null
@@ -37,16 +42,22 @@ const { data: testContext, refresh: refreshContext } = await useAsyncData(
       const siteUrl = config.public.siteUrl as string
       const apiBaseUrl = config.public.whileApiUrl as string
       const isSystem = isSystemSandbox(connection.value!)
+      const receiverUrl = `${siteUrl}/api/webhooks/while`
       return Promise.resolve({
         connectionId: connectionId.value,
         partnerName: connection.value?.partnerName ?? 'Connection',
         isSystemSandbox: isSystem,
         apiBaseUrl,
-        webhookUrl: `${siteUrl}/api/webhooks/while`,
+        orgDefaultWebhookUrl: receiverUrl,
+        connectionWebhookUrl: null,
+        webhookUrl: receiverUrl,
+        inheritsDefault: true,
+        urlSource: 'org',
+        hasCustomSecret: false,
         webhookSecretConfigured: true,
         samplePatientId: 'pat_mock0001_01',
         keyPrefix: 'wh_test_mock',
-        siteReceiverUrl: `${siteUrl}/api/webhooks/while`,
+        siteReceiverUrl: receiverUrl,
         dockerReceiverUrl: `${siteUrl.replace('localhost', 'host.docker.internal')}/api/webhooks/while`,
         webhookUrlNeedsDockerFix: false
       } satisfies TestContext)
@@ -168,9 +179,15 @@ const pairedSandbox = computed(() => {
   return undefined
 })
 
-function onWebhookSaved(url: string) {
+function onWebhookSaved(payload: { effectiveUrl: string | null, inheritsDefault: boolean }) {
   if (testContext.value) {
-    testContext.value = { ...testContext.value, webhookUrl: url }
+    testContext.value = {
+      ...testContext.value,
+      webhookUrl: payload.effectiveUrl,
+      inheritsDefault: payload.inheritsDefault,
+      connectionWebhookUrl: payload.inheritsDefault ? null : payload.effectiveUrl,
+      urlSource: payload.inheritsDefault ? 'org' : 'connection'
+    }
   }
   if (!config.public.mockMode) {
     void refreshContext()
@@ -236,7 +253,7 @@ function onWebhookSaved(url: string) {
         Interactive API tests run against the
         <strong class="text-highlighted">While Sandbox</strong>
         system connection. This {{ connection.environment }} clinic connection uses Sidecar tunneling —
-        use the webhook section below for org-level delivery setup.
+        use the webhook section below for per-connection delivery setup.
         <code class="font-mono text-xs">connection_id</code>
         in each payload identifies this connection (
         <code class="font-mono text-xs">{{ connection.id }}</code>).
@@ -301,6 +318,12 @@ function onWebhookSaved(url: string) {
     <ConnectionsTestConnectionWebhookTestPanel
       :connection-id="testContext.connectionId"
       :webhook-url="testContext.webhookUrl"
+      :org-default-webhook-url="testContext.orgDefaultWebhookUrl"
+      :connection-webhook-url="testContext.connectionWebhookUrl"
+      :inherits-default="testContext.inheritsDefault"
+      :url-source="testContext.urlSource"
+      :has-custom-secret="testContext.hasCustomSecret"
+      :webhook-secret-configured="testContext.webhookSecretConfigured"
       :site-receiver-url="testContext.siteReceiverUrl"
       :docker-receiver-url="testContext.dockerReceiverUrl"
       :webhook-url-needs-docker-fix="testContext.webhookUrlNeedsDockerFix"

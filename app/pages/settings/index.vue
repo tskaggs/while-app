@@ -169,16 +169,26 @@ const planLabel = computed(() => {
       <UCard class="rounded-xl border border-default bg-elevated">
         <template #header>
           <h3 class="font-semibold text-highlighted">
-            Webhook URL
+            Default webhook destination
           </h3>
+          <p class="text-sm text-muted mt-1">
+            Used by all connections unless a connection overrides URL or secret on its Test page.
+          </p>
         </template>
         <div class="space-y-3">
-          <UFormField label="Event Destination">
+          <UFormField label="Org default webhook URL">
             <UInput v-model="webhookUrl" placeholder="https://your-app.com/webhook/while" />
           </UFormField>
           <UButton :loading="webhookSaving" @click="saveWebhook">
-            Save webhook URL
+            Save default webhook URL
           </UButton>
+          <p class="text-xs text-muted">
+            Per-connection overrides and secret rotation are on each connection's
+            <NuxtLink to="/connections" class="text-primary hover:underline">
+              Test
+            </NuxtLink>
+            tab.
+          </p>
           <p v-if="webhookMessage" class="text-sm text-muted">
             {{ webhookMessage }}
           </p>

@@ -1,8 +1,40 @@
 <script setup lang="ts">
-const { connection, useConnectionPageMeta, isSystemSandbox } = useConnectionDetail()
+const { connection, connectionId, useConnectionPageMeta, isSystemSandbox } = useConnectionDetail()
 const config = useRuntimeConfig()
+const requestFetch = useRequestFetch()
 
 useConnectionPageMeta()
+
+interface ConnectionWebhookSummary {
+  effective: { webhookUrl: string | null, urlSource: 'org' | 'connection' | null }
+  inheritsDefault: boolean
+}
+
+const { data: webhookSummary } = await useAsyncData(
+  () => `connection-webhook-${connectionId.value}`,
+  () => {
+    if (!connectionId.value || config.public.mockMode) return Promise.resolve(null)
+    return requestFetch<ConnectionWebhookSummary>(`/api/connections/${connectionId.value}/webhook`)
+  },
+  { watch: [connectionId] }
+)
+
+const webhookUrlLabel = computed(() => {
+  const url = webhookSummary.value?.effective.webhookUrl
+  if (!url) return 'Not configured'
+  try {
+    const parsed = new URL(url)
+    return parsed.hostname + parsed.pathname
+  } catch {
+    return url
+  }
+})
+
+const webhookSourceLabel = computed(() => {
+  if (webhookSummary.value?.inheritsDefault) return 'Inherits org default'
+  if (webhookSummary.value?.effective.urlSource === 'connection') return 'Connection override'
+  return 'Org default'
+})
 </script>
 
 <template>
@@ -56,6 +88,25 @@ useConnectionPageMeta()
             </dt>
             <dd class="capitalize text-highlighted">
               {{ connection.environment }}
+            </dd>
+          </div>
+          <div v-if="webhookSummary || config.public.mockMode" class="col-span-2">
+            <dt class="text-muted">
+              Webhook destination
+            </dt>
+            <dd class="flex flex-wrap items-center gap-2 mt-1">
+              <span class="font-mono text-xs text-highlighted break-all">
+                {{ webhookUrlLabel }}
+              </span>
+              <UBadge variant="subtle" size="sm">
+                {{ webhookSourceLabel }}
+              </UBadge>
+              <NuxtLink
+                :to="`/connections/${connection.id}/test`"
+                class="text-xs text-primary hover:underline"
+              >
+                Configure on Test
+              </NuxtLink>
             </dd>
           </div>
           <div v-if="connection.pairedConnectionId">

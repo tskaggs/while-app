@@ -2,6 +2,11 @@ import { createHash, randomBytes } from 'crypto'
 import { prisma } from '../lib/prisma'
 import { storePendingApiKey, getPendingApiKey, clearPendingApiKey } from './pendingApiKeys'
 import { resolveProvisionWebhookUrl } from './webhookUrl'
+import {
+  seedConnectionMappings,
+  upsertOrgSandboxProfile
+} from './connectionMapping'
+import type { SandboxProfileInput } from './ehrFieldCatalog'
 
 const KEY_PREFIX = 'wh_test_'
 const WEBHOOK_PREFIX = 'whsec_'
@@ -61,6 +66,11 @@ export interface ProvisionResult {
   samplePatientId: string
   alreadyProvisioned: boolean
   keyRegenerated?: boolean
+  sandboxProfile?: {
+    ehrVendor: string
+    dataFormat: string
+    resourceTypes: string[]
+  }
 }
 
 async function persistPendingSandboxKey(orgId: string, rawKey: string) {
@@ -135,11 +145,18 @@ export async function resolveOnboardingSandboxKey(orgId: string) {
 export async function provisionOrganization(
   orgId: string,
   orgName: string,
-  webhookBaseUrl: string
+  webhookBaseUrl: string,
+  sandboxProfileInput?: SandboxProfileInput
 ): Promise<ProvisionResult> {
+  const profileInput: SandboxProfileInput = {
+    ehrVendor: sandboxProfileInput?.ehrVendor ?? 'Other',
+    dataFormat: sandboxProfileInput?.dataFormat ?? 'fhir',
+    resourceTypes: sandboxProfileInput?.resourceTypes ?? ['Patient', 'Encounter', 'Observation']
+  }
+
   const existing = await prisma.machineOrganization.findUnique({
     where: { id: orgId },
-    include: { sandboxSettings: true, orgOnboarding: true }
+    include: { sandboxSettings: true, orgOnboarding: true, sandboxProfile: true }
   })
 
   const connectionId = defaultConnectionId(orgId)
@@ -147,7 +164,13 @@ export async function provisionOrganization(
   const webhookUrl = resolveProvisionWebhookUrl(webhookBaseUrl)
 
   if (existing) {
+    if (!existing.sandboxProfile) {
+      await upsertOrgSandboxProfile(orgId, profileInput)
+      await seedConnectionMappings(orgId, connectionId, profileInput)
+    }
+
     const { sandboxApiKey, keyRegenerated } = await resolveOnboardingSandboxKey(orgId)
+    const profile = existing.sandboxProfile ?? await upsertOrgSandboxProfile(orgId, profileInput)
     return {
       orgId,
       orgName: existing.name,
@@ -156,7 +179,12 @@ export async function provisionOrganization(
       connectionId,
       samplePatientId,
       alreadyProvisioned: true,
-      keyRegenerated
+      keyRegenerated,
+      sandboxProfile: {
+        ehrVendor: profile.ehrVendor,
+        dataFormat: profile.dataFormat,
+        resourceTypes: profile.resourceTypes as string[]
+      }
     }
   }
 
@@ -204,9 +232,10 @@ export async function provisionOrganization(
         tunnelStatus: 'active',
         wireguardPublicKey: generateWireguardPublicKey(orgId),
         ehrEndpoint: 'While Synthetic Hospital (FHIR R4)',
-        ehrVendor: 'Other',
+        ehrVendor: profileInput.ehrVendor ?? 'Other',
         region: 'control-plane',
-        lastSyncAt: new Date()
+        lastSyncAt: new Date(),
+        provisioningStatus: 'active'
       }
     })
 
@@ -214,6 +243,9 @@ export async function provisionOrganization(
       data: { orgId, pendingSandboxKey: rawKey }
     })
   })
+
+  await upsertOrgSandboxProfile(orgId, profileInput)
+  await seedConnectionMappings(orgId, connectionId, profileInput)
 
   await persistPendingSandboxKey(orgId, rawKey)
 
@@ -224,7 +256,12 @@ export async function provisionOrganization(
     webhookSecret,
     connectionId,
     samplePatientId,
-    alreadyProvisioned: false
+    alreadyProvisioned: false,
+    sandboxProfile: {
+      ehrVendor: profileInput.ehrVendor ?? 'Other',
+      dataFormat: profileInput.dataFormat ?? 'fhir',
+      resourceTypes: profileInput.resourceTypes ?? ['Patient']
+    }
   }
 }
 

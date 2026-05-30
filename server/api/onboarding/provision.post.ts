@@ -1,6 +1,7 @@
 import { auth } from '../../lib/auth'
 import { requireMachineOrg } from '../../utils/authSession'
 import { provisionOrganization, isOnboardingComplete } from '../../utils/provisionOrg'
+import { provisionAccountSandboxVm } from '../../utils/provisioningWorker'
 
 export default defineEventHandler(async (event) => {
   const { machineOrgId, authOrgId } = await requireMachineOrg(event)
@@ -20,10 +21,23 @@ export default defineEventHandler(async (event) => {
     || config.public.siteUrl
     || 'http://localhost:3000'
 
+  const body = await readBody<{
+    ehrVendor?: string
+    dataFormat?: string
+    resourceTypes?: string[]
+  }>(event).catch(() => undefined)
+
   const result = await provisionOrganization(
     machineOrgId,
     org.name,
-    webhookBase
+    webhookBase,
+    body
+      ? {
+          ehrVendor: body.ehrVendor,
+          dataFormat: body.dataFormat,
+          resourceTypes: body.resourceTypes
+        }
+      : undefined
   )
 
   const completed = await isOnboardingComplete(machineOrgId)
@@ -33,6 +47,10 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       message: 'Unable to issue a sandbox API key. Try again.'
     })
+  }
+
+  if (!result.alreadyProvisioned) {
+    void provisionAccountSandboxVm(machineOrgId).catch(() => {})
   }
 
   return {

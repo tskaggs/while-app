@@ -1,0 +1,47 @@
+{
+  "version": "1",
+  "vendors": {
+    "Epic": {
+      "hl7": [
+        { "sourcePath": "PID-5 (Patient Name)", "targetFhirPath": "Patient.name", "label": "Patient name", "required": true, "description": "HL7 PID-5 patient name components" },
+        { "sourcePath": "PID-7 (Date of Birth)", "targetFhirPath": "Patient.birthDate", "label": "Date of birth", "required": true, "description": "Patient date of birth" },
+        { "sourcePath": "PID-8 (Gender)", "targetFhirPath": "Patient.gender", "label": "Gender", "required": true, "description": "Administrative gender" },
+        { "sourcePath": "PID-3 (MRN)", "targetFhirPath": "Patient.identifier", "label": "Medical record number", "required": true, "description": "Primary patient identifier" },
+        { "sourcePath": "OBX-5 (Observation Value)", "targetFhirPath": "Observation.valueQuantity", "label": "Observation value", "required": false, "description": "Lab or vital observation value" },
+        { "sourcePath": "PV1-44 (Admit Date)", "targetFhirPath": "Encounter.period.start", "label": "Admit date", "required": false, "description": "Encounter admission timestamp" }
+      ],
+      "fhir": [
+        { "sourcePath": "Patient.name", "targetFhirPath": "Patient.name", "label": "Patient name", "required": true, "description": "FHIR Patient.name" },
+        { "sourcePath": "Patient.birthDate", "targetFhirPath": "Patient.birthDate", "label": "Date of birth", "required": true, "description": "FHIR Patient.birthDate" },
+        { "sourcePath": "Patient.gender", "targetFhirPath": "Patient.gender", "label": "Gender", "required": true, "description": "FHIR Patient.gender" },
+        { "sourcePath": "Patient.identifier", "targetFhirPath": "Patient.identifier", "label": "MRN", "required": true, "description": "FHIR Patient.identifier" }
+      ]
+    },
+    "Cerner": {
+      "hl7": [
+        { "sourcePath": "PID-5 (Patient Name)", "targetFhirPath": "Patient.name", "label": "Patient name", "required": true, "description": "Cerner HL7 patient name" },
+        { "sourcePath": "PID-7 (Date of Birth)", "targetFhirPath": "Patient.birthDate", "label": "Date of birth", "required": true, "description": "Cerner DOB field" },
+        { "sourcePath": "PID-8 (Gender)", "targetFhirPath": "Patient.gender", "label": "Gender", "required": true, "description": "Cerner gender code" },
+        { "sourcePath": "PID-3 (MRN)", "targetFhirPath": "Patient.identifier", "label": "MRN", "required": true, "description": "Cerner medical record number" }
+      ],
+      "fhir": [
+        { "sourcePath": "Patient.name", "targetFhirPath": "Patient.name", "label": "Patient name", "required": true, "description": "Cerner FHIR name" },
+        { "sourcePath": "Patient.birthDate", "targetFhirPath": "Patient.birthDate", "label": "Date of birth", "required": true, "description": "Cerner FHIR birthDate" }
+      ]
+    },
+    "Other": {
+      "hl7": [
+        { "sourcePath": "PID-5 (Patient Name)", "targetFhirPath": "Patient.name", "label": "Patient name", "required": true, "description": "Generic HL7 patient name" },
+        { "sourcePath": "PID-7 (Date of Birth)", "targetFhirPath": "Patient.birthDate", "label": "Date of birth", "required": true, "description": "Generic DOB" },
+        { "sourcePath": "PID-8 (Gender)", "targetFhirPath": "Patient.gender", "label": "Gender", "required": true, "description": "Generic gender" },
+        { "sourcePath": "PID-3 (MRN)", "targetFhirPath": "Patient.identifier", "label": "MRN", "required": true, "description": "Generic MRN" }
+      ],
+      "fhir": [
+        { "sourcePath": "Patient.name", "targetFhirPath": "Patient.name", "label": "Patient name", "required": true, "description": "Generic FHIR name" },
+        { "sourcePath": "Patient.birthDate", "targetFhirPath": "Patient.birthDate", "label": "Date of birth", "required": true, "description": "Generic FHIR birthDate" },
+        { "sourcePath": "Patient.gender", "targetFhirPath": "Patient.gender", "label": "Gender", "required": true, "description": "Generic FHIR gender" },
+        { "sourcePath": "Patient.identifier", "targetFhirPath": "Patient.identifier", "label": "MRN", "required": true, "description": "Generic FHIR identifier" }
+      ]
+    }
+  }
+}

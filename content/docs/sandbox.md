@@ -7,7 +7,7 @@ description: Synthetic FHIR sandbox, testable control plane endpoints, and what 
 
 The **While Sandbox** is a self-serve integration environment on the **While control plane**. It serves **synthetic FHIR R4 data** scoped to your organization — no real clinic connectivity and no PHI in the control plane.
 
-Every account gets a system **While Sandbox** connection (`conn-sa-{org_short_id}`) and a sandbox API key (`wh_test_*`) during [onboarding](/docs/onboarding). Use the sandbox to validate Bearer auth, patient reads, webhook delivery, and dashboard telemetry before requesting live Sidecar connections.
+Every account gets a system **While Sandbox** connection (`conn-sa-{org_short_id}`) and a sandbox API key (`wh_test_*`) during [onboarding](/docs/onboarding). The sandbox is **1:1 with your account**: during Step 1 you choose your origin EHR vendor and data format; default HL7→FHIR mappings are seeded and can be edited on **Connections → While Sandbox → Mapping**. Required clinic connectivity fields are saved on the **Connectivity** tab. Use the sandbox to validate Bearer auth, patient reads, webhook delivery, and dashboard telemetry before requesting live Sidecar connections.
 
 See also [Environments](/docs/environments) for sandbox vs live semantics.
 

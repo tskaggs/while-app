@@ -20,6 +20,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL || '',
     whileApiUrl: process.env.WHILE_API_URL || 'http://localhost:8000',
+    ollamaBaseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
+    ollamaModel: process.env.OLLAMA_MODEL || 'gpt-oss:120b-cloud',
     betterAuthSecret: process.env.BETTER_AUTH_SECRET || '',
     betterAuthUrl: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
     webhookBaseUrl: process.env.WHILE_WEBHOOK_BASE_URL || '',

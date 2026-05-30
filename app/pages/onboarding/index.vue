@@ -11,6 +11,10 @@ const loading = ref(false)
 const error = ref('')
 const statusReady = ref(false)
 
+const ehrVendor = ref<'Epic' | 'Cerner' | 'Meditech' | 'Athena' | 'Other'>('Epic')
+const dataFormat = ref<'fhir' | 'hl7' | 'both'>('fhir')
+const resourceTypes = ref<string[]>(['Patient', 'Encounter', 'Observation'])
+
 const provision = ref<{
   orgId: string
   orgName: string
@@ -198,7 +202,14 @@ async function runProvision() {
   try {
     const result = await $fetch<ProvisionPayload & { onboardingComplete?: boolean }>(
       '/api/onboarding/provision',
-      { method: 'POST' }
+      {
+        method: 'POST',
+        body: {
+          ehrVendor: ehrVendor.value,
+          dataFormat: dataFormat.value,
+          resourceTypes: resourceTypes.value
+        }
+      }
     )
 
     if (result.onboardingComplete) {
@@ -396,9 +407,45 @@ useSeoMeta({ title: 'Onboarding' })
             Your sandbox is already set up. Continue to retrieve your credentials and finish onboarding.
           </template>
           <template v-else>
-            We'll create your machine-plane organization, sandbox API key, and default While Sandbox connection.
+            We'll create your machine-plane organization, a 1:1 account sandbox, API key, and default field mappings for your EHR.
           </template>
         </p>
+
+        <div v-if="!resumeSetup" class="space-y-4 mb-4">
+          <UFormField label="Origin EHR vendor">
+            <USelectMenu
+              v-model="ehrVendor"
+              :items="['Epic', 'Cerner', 'Meditech', 'Athena', 'Other']"
+            />
+          </UFormField>
+          <UFormField label="Source data format">
+            <USelectMenu
+              v-model="dataFormat"
+              :items="[
+                { label: 'FHIR R4', value: 'fhir' },
+                { label: 'HL7 v2', value: 'hl7' },
+                { label: 'Both', value: 'both' }
+              ]"
+              value-key="value"
+            />
+          </UFormField>
+          <UFormField label="Resource scope">
+            <div class="flex flex-wrap gap-2">
+              <UCheckbox
+                v-for="type in ['Patient', 'Encounter', 'Observation', 'DiagnosticReport']"
+                :key="type"
+                :model-value="resourceTypes.includes(type)"
+                :label="type"
+                @update:model-value="(value: boolean | 'indeterminate') => {
+                  const checked = value === true
+                  if (checked && !resourceTypes.includes(type)) resourceTypes.push(type)
+                  if (!checked) resourceTypes = resourceTypes.filter(t => t !== type)
+                }"
+              />
+            </div>
+          </UFormField>
+        </div>
+
         <UButton :loading="loading" @click="runProvision">
           {{ resumeSetup ? 'Continue setup' : 'Set up sandbox' }}
         </UButton>

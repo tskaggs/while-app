@@ -19,6 +19,7 @@ interface DashboardConnectionRecord {
   lastSyncAt?: string | null
   region?: string
   messagesProcessed24h?: number
+  provisioningStatus?: string
 }
 
 function mapDashboardConnection(record: DashboardConnectionRecord): Connection {
@@ -36,7 +37,8 @@ function mapDashboardConnection(record: DashboardConnectionRecord): Connection {
     lastSyncAt: record.lastSyncAt ?? new Date().toISOString(),
     flightCheck: { mtu: true, handshake: isSystem || record.tunnelStatus === 'active', hl7Ack: isSystem || record.tunnelStatus === 'active' },
     region: record.region ?? (isSystem ? 'control-plane' : 'us-east-1'),
-    messagesProcessed24h: record.messagesProcessed24h ?? 0
+    messagesProcessed24h: record.messagesProcessed24h ?? 0,
+    provisioningStatus: (record.provisioningStatus as Connection['provisioningStatus']) ?? 'active'
   }
 }
 

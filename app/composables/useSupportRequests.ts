@@ -121,10 +121,13 @@ const _useSupportRequests = () => {
           estimatedVolume: form.estimatedVolume,
           notes: form.notes
         }
-      }).then(() => {
+      }).then((result: { connectionId?: string | null }) => {
+        const connectionId = result?.connectionId
         toast.add({
           title: 'Connection request submitted',
-          description: 'Provisioning started — configure mappings while your sandbox is prepared.',
+          description: connectionId
+            ? `Copy sandbox credentials once from Connectivity → Credential on connection ${connectionId}.`
+            : 'Provisioning started — configure mappings while your sandbox is prepared.',
           color: 'success'
         })
       }).catch(() => {

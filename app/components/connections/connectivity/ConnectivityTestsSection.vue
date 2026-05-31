@@ -26,7 +26,7 @@ const props = defineProps<{
 
 const config = useRuntimeConfig()
 const requestFetch = useRequestFetch()
-const { connections, getPairedConnection, isSystemSandbox } = useConnections()
+const { connections, getPairedConnection } = useConnections()
 
 const sandboxApiKey = ref('')
 
@@ -36,7 +36,7 @@ const { data: testContext, refresh: refreshContext, pending } = await useAsyncDa
     if (config.public.mockMode) {
       const siteUrl = config.public.siteUrl as string
       const apiBaseUrl = config.public.whileApiUrl as string
-      const isSystem = isSystemSandbox(props.connection)
+      const isSystem = props.connection.partnerName === 'While Sandbox'
       const receiverUrl = `${siteUrl}/api/webhooks/while`
       return Promise.resolve({
         connectionId: props.connection.id,
@@ -149,24 +149,6 @@ async function runPatientTest() {
   }
 }
 
-const systemSandboxConnection = computed(() =>
-  connections.value.find(c => isSystemSandbox(c))
-)
-
-const sandboxTestLink = computed(() => {
-  if (isSystemSandbox(props.connection)) return null
-
-  if (props.connection.environment === 'live' && props.connection.pairedConnectionId) {
-    return `/connections/${props.connection.pairedConnectionId}/connectivity?section=tests`
-  }
-
-  if (systemSandboxConnection.value) {
-    return `/connections/${systemSandboxConnection.value.id}/connectivity?section=tests`
-  }
-
-  return null
-})
-
 const pairedSandbox = computed(() => {
   const paired = getPairedConnection(props.connection)
   if (paired?.environment === 'sandbox') return paired
@@ -240,27 +222,12 @@ function onWebhookSaved(payload: { effectiveUrl: string | null, inheritsDefault:
       </ConnectionsConnectivityFieldBlock>
 
       <ConnectionsConnectivityFieldBlock
-        v-if="!testContext.isSystemSandbox"
-        label="Partner connection testing"
-        description="Interactive API catalog tests run against the While Sandbox system connection."
-        help="Clinic connections use sidecar tunneling in production. Open the While Sandbox test suite for catalog/patient API checks; use webhook tests below for per-connection delivery."
+        v-if="connection.environment !== 'sandbox'"
+        label="Live connection testing"
+        description="Sandbox API catalog and patient tests are available on the paired sandbox twin."
+        help="Switch to the sandbox twin connection to run control-plane API tests with that connection's credentials."
       >
-        <p class="text-sm text-muted">
-          This {{ connection.environment }} connection is identified by
-          <code class="font-mono text-xs">{{ connection.id }}</code>
-          in webhook payloads.
-        </p>
-        <UButton
-          v-if="sandboxTestLink"
-          :to="sandboxTestLink"
-          class="mt-3"
-          variant="outline"
-          icon="i-iconoir-arrow-right"
-          size="sm"
-        >
-          Open While Sandbox tests
-        </UButton>
-        <p v-if="pairedSandbox && connection.environment === 'live'" class="mt-2 text-xs text-muted">
+        <p v-if="pairedSandbox" class="text-sm text-muted">
           Clinic sandbox twin:
           <NuxtLink
             :to="`/connections/${pairedSandbox.id}/connectivity?section=tests`"
@@ -272,7 +239,7 @@ function onWebhookSaved(payload: { effectiveUrl: string | null, inheritsDefault:
       </ConnectionsConnectivityFieldBlock>
     </ConnectionsConnectivityFieldGroup>
 
-    <div v-if="testContext.isSystemSandbox" class="space-y-4 border-t border-default pt-5">
+    <div v-if="connection.environment === 'sandbox'" class="space-y-4 border-t border-default pt-5">
       <div class="border-b border-default pb-2">
         <h4 class="text-xs font-semibold uppercase tracking-wide text-dimmed">
           API endpoint tests
@@ -350,7 +317,7 @@ function onWebhookSaved(payload: { effectiveUrl: string | null, inheritsDefault:
       :sample-patient-id="testContext.samplePatientId"
       :sandbox-api-key="sandboxApiKey"
       :mock-mode="config.public.mockMode"
-      :enable-trigger-test="testContext.isSystemSandbox"
+      :enable-trigger-test="connection.environment === 'sandbox'"
       @webhook-saved="onWebhookSaved"
     />
     </div>

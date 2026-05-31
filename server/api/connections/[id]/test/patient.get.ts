@@ -2,7 +2,7 @@ import { requireMachineOrg } from '../../../../utils/authSession'
 import { orgShortId } from '../../../../utils/provisionOrg'
 import {
   assertConnectionAccess,
-  isSystemSandboxConnection,
+  isSandboxTestConnection,
   resolveTestApiKey,
   samplePatientIdForOrg
 } from '../../../../utils/connectionTest'
@@ -39,14 +39,14 @@ export default defineEventHandler(async (event) => {
   const { machineOrgId } = await requireMachineOrg(event)
   const connection = await assertConnectionAccess(machineOrgId, connectionId)
 
-  if (!isSystemSandboxConnection(connection)) {
+  if (!isSandboxTestConnection(connection)) {
     throw createError({
       statusCode: 403,
-      message: 'Patient tests are only available for the While Sandbox connection.'
+      message: 'Patient tests are only available for sandbox connections.'
     })
   }
 
-  const apiKey = await resolveTestApiKey(event, machineOrgId)
+  const apiKey = await resolveTestApiKey(event, machineOrgId, connectionId)
   const patientId = samplePatientIdForOrg(machineOrgId)
   const apiUrl = config.whileApiUrl || 'http://localhost:8000'
 
@@ -64,9 +64,12 @@ export default defineEventHandler(async (event) => {
 
   const patient = await res.json()
 
-  const catalogRes = await fetchWhileApi(`${apiUrl}/v1/sandbox/catalog`, {
-    headers: { Authorization: `Bearer ${apiKey}` }
-  })
+  const catalogRes = await fetchWhileApi(
+    `${apiUrl}/v1/sandbox/catalog?connection_id=${encodeURIComponent(connectionId)}`,
+    {
+      headers: { Authorization: `Bearer ${apiKey}` }
+    }
+  )
 
   const catalog = catalogRes.ok ? await catalogRes.json() : null
 

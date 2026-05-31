@@ -2,7 +2,7 @@ import { requireMachineOrg } from '../../../../utils/authSession'
 import { defaultPatientId } from '../../../../utils/provisionOrg'
 import {
   assertConnectionAccess,
-  isSystemSandboxConnection,
+  isSandboxTestConnection,
   readSandboxApiKeyFromEvent,
   resolveTestApiKey
 } from '../../../../utils/connectionTest'
@@ -66,14 +66,14 @@ export default defineEventHandler(async (event) => {
   const { machineOrgId } = await requireMachineOrg(event)
   const connection = await assertConnectionAccess(machineOrgId, connectionId)
 
-  if (!isSystemSandboxConnection(connection)) {
+  if (!isSandboxTestConnection(connection)) {
     throw createError({
       statusCode: 403,
-      message: 'Webhook trigger tests are only available for the While Sandbox connection.'
+      message: 'Webhook trigger tests are only available for sandbox connections.'
     })
   }
 
-  const apiKey = await resolveTestApiKey(event, machineOrgId, providedKey)
+  const apiKey = await resolveTestApiKey(event, machineOrgId, connectionId, providedKey)
 
   const patientId = body?.patient_id ?? defaultPatientId(machineOrgId, 1)
   const webhookEvent = body?.event ?? 'patient.admitted'

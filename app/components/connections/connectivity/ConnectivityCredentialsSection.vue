@@ -24,6 +24,9 @@ interface CredentialsContext {
   canRotate: boolean
   activeKey: ActiveKey | null
   history: HistoryEvent[]
+  webhookUrl?: string | null
+  webhookSecretConfigured?: boolean
+  hasPendingCredentials?: boolean
 }
 
 const props = defineProps<{
@@ -33,27 +36,29 @@ const props = defineProps<{
 const config = useRuntimeConfig()
 const toast = useToast()
 const requestFetch = useRequestFetch()
-const { connections, isSystemSandbox } = useConnections()
 
 const rotatedKey = ref<string | null>(null)
+const revealedWebhookSecret = ref<string | null>(null)
 const rotating = ref(false)
 
 const { data: credentials, pending } = await useAsyncData(
   () => `connection-credentials-${props.connection.id}`,
   () => {
     if (config.public.mockMode) {
-      const system = isSystemSandbox(props.connection)
       return Promise.resolve({
         connectionId: props.connection.id,
         partnerName: props.connection.partnerName,
-        isSystemSandbox: system,
-        canRotate: system,
+        isSystemSandbox: props.connection.partnerName === 'While Sandbox',
+        canRotate: props.connection.environment === 'sandbox',
         activeKey: {
           id: 'mock-active-key',
           keyPrefix: 'wh_test_',
           environment: 'sandbox',
           createdAt: '2026-05-28T16:42:00.000Z'
         },
+        webhookUrl: 'http://localhost:3000/api/webhooks/while',
+        webhookSecretConfigured: true,
+        hasPendingCredentials: false,
         history: [
           {
             id: 'mock-key-2-created',
@@ -72,16 +77,22 @@ const { data: credentials, pending } = await useAsyncData(
   { watch: () => props.connection.id }
 )
 
-const systemSandboxConnection = computed(() =>
-  connections.value.find(c => isSystemSandbox(c))
-)
-
-const sandboxCredentialsLink = computed(() => {
-  if (isSystemSandbox(props.connection)) return null
-  if (systemSandboxConnection.value) {
-    return `/connections/${systemSandboxConnection.value.id}/connectivity?section=credential`
+onMounted(async () => {
+  if (config.public.mockMode || !credentials.value?.hasPendingCredentials) return
+  try {
+    const revealed = await requestFetch<{
+      sandboxApiKey: string
+      webhookSecret: string
+      webhookUrl: string | null
+    }>(`/api/connections/${props.connection.id}/credentials/reveal`)
+    if (revealed.sandboxApiKey) rotatedKey.value = revealed.sandboxApiKey
+    if (revealed.webhookSecret) revealedWebhookSecret.value = revealed.webhookSecret
+    if (credentials.value) {
+      credentials.value = { ...credentials.value, hasPendingCredentials: false }
+    }
+  } catch {
+    // Pending credentials already revealed or unavailable
   }
-  return null
 })
 
 async function rotateKey() {
@@ -130,7 +141,7 @@ async function rotateKey() {
   <div v-else-if="credentials" class="space-y-5">
     <ConnectionsConnectivitySectionIntro
       title="Credentials"
-      description="API keys and secrets used to authenticate your application with While sandbox services."
+      description="Per-connection API keys and webhook secrets for sandbox testing."
       icon="i-iconoir-key"
     />
 
@@ -142,9 +153,11 @@ async function rotateKey() {
       :active-key="credentials.activeKey"
       :history="credentials.history"
       :rotated-key="rotatedKey"
+      :revealed-webhook-secret="revealedWebhookSecret"
+      :webhook-url="credentials.webhookUrl"
+      :webhook-secret-configured="credentials.webhookSecretConfigured"
       :rotating="rotating"
       :mock-mode="config.public.mockMode"
-      :sandbox-credentials-link="sandboxCredentialsLink"
       embedded
       @rotate="rotateKey"
     />

@@ -23,9 +23,11 @@ const props = defineProps<{
   activeKey: ActiveKey | null
   history: HistoryEvent[]
   rotatedKey?: string | null
+  revealedWebhookSecret?: string | null
+  webhookUrl?: string | null
+  webhookSecretConfigured?: boolean
   rotating?: boolean
   mockMode?: boolean
-  sandboxCredentialsLink?: string | null
   embedded?: boolean
 }>()
 
@@ -59,6 +61,17 @@ async function copyRotatedKey() {
   }
 }
 
+async function copyWebhookSecret() {
+  if (!props.revealedWebhookSecret) return
+
+  try {
+    await navigator.clipboard.writeText(props.revealedWebhookSecret)
+    toast.add({ title: 'Webhook secret copied', color: 'success' })
+  } catch {
+    toast.add({ title: 'Copy failed', color: 'error' })
+  }
+}
+
 function confirmRotate() {
   rotateConfirmOpen.value = false
   emit('rotate')
@@ -75,72 +88,23 @@ function confirmRotate() {
         <span class="font-mono text-xs">{{ connectionId }}</span>
       </p>
       <p class="mt-2 text-sm text-muted">
-        API keys are organization-scoped. Rotating a key stops the previous
+        Each sandbox connection has its own
         <code class="font-mono text-xs">wh_test_*</code>
-        token immediately.
+        API key and
+        <code class="font-mono text-xs">whsec_*</code>
+        webhook secret. Rotating a key stops the previous token immediately.
       </p>
     </UCard>
 
     <ConnectionsConnectivityFieldGroup
-      v-if="!isSystemSandbox"
-      title="Organization sandbox key"
-      description="Partner connections share one org-level sandbox token."
-    >
-      <ConnectionsConnectivityFieldBlock
-        v-if="embedded"
-        label="While Sandbox credentials"
-        description="Partner clinic connections share one org-level sandbox API key."
-        help="Manage and rotate the shared wh_test_* key on the While Sandbox system connection. Clinic-sidecar live credentials are separate and provisioned by While for production."
-      >
-        <p class="text-sm text-muted">
-          Sandbox API keys are managed on the
-          <strong class="text-highlighted">While Sandbox</strong>
-          system connection.
-        </p>
-        <UButton
-          v-if="sandboxCredentialsLink"
-          :to="sandboxCredentialsLink"
-          class="mt-3"
-          variant="outline"
-          icon="i-iconoir-arrow-right"
-          size="sm"
-        >
-          Open While Sandbox credentials
-        </UButton>
-      </ConnectionsConnectivityFieldBlock>
-
-      <UCard v-else :class="cardClass">
-        <template #header>
-          <h3 class="font-semibold text-highlighted">
-            Partner connection
-          </h3>
-        </template>
-        <p class="text-sm text-muted">
-          Sandbox API keys are managed on the
-          <strong class="text-highlighted">While Sandbox</strong>
-          system connection. This clinic connection uses Sidecar credentials separately in production.
-        </p>
-        <UButton
-          v-if="sandboxCredentialsLink"
-          :to="sandboxCredentialsLink"
-          class="mt-4"
-          variant="outline"
-          icon="i-iconoir-arrow-right"
-        >
-          Open While Sandbox credentials
-        </UButton>
-      </UCard>
-    </ConnectionsConnectivityFieldGroup>
-
-    <ConnectionsConnectivityFieldGroup
       title="Active key"
-      description="Current sandbox API token for your organization."
+      description="Sandbox API token scoped to this connection."
     >
       <ConnectionsConnectivityFieldBlock
         v-if="embedded"
         label="Active sandbox API key"
-        description="Organization-scoped wh_test_* token for calling While sandbox APIs."
-        help="Plaintext is shown once after onboarding or rotation — save it in a secrets manager. Paste the full key in Tests to run live requests."
+        description="Connection-scoped wh_test_* token for calling While sandbox APIs."
+        help="Plaintext is shown once after provision or rotation — save it in a secrets manager. Paste the full key in Tests to run live requests for this connection."
       >
         <div class="space-y-3">
           <div v-if="canRotate" class="flex justify-end">
@@ -195,7 +159,7 @@ function confirmRotate() {
             color="warning"
             variant="subtle"
             title="No active sandbox key"
-            description="Rotate to issue a new sandbox API key for this organization."
+            description="Rotate to issue a new sandbox API key for this connection."
           />
         </div>
       </ConnectionsConnectivityFieldBlock>
@@ -263,14 +227,66 @@ function confirmRotate() {
           color="warning"
           variant="subtle"
           title="No active sandbox key"
-          description="Rotate to issue a new sandbox API key for this organization."
+          description="Rotate to issue a new sandbox API key for this connection."
         />
       </UCard>
     </ConnectionsConnectivityFieldGroup>
 
     <ConnectionsConnectivityFieldGroup
+      title="Webhook"
+      description="Delivery destination and signing secret for this sandbox connection."
+    >
+      <ConnectionsConnectivityFieldBlock
+        v-if="embedded"
+        label="Webhook destination"
+        description="Starts from your org default URL; each connection has its own whsec_* secret."
+        help="Override the URL per connection under Tests. Use the connection-specific secret to verify X-While-Signature."
+      >
+        <div class="space-y-3">
+          <div v-if="revealedWebhookSecret" class="space-y-3">
+            <UAlert
+              color="warning"
+              variant="subtle"
+              title="New webhook secret"
+              description="Copy this secret now. It will not be shown again after you leave this page."
+            />
+            <div class="flex items-center gap-2">
+              <UInput
+                :model-value="revealedWebhookSecret"
+                readonly
+                class="flex-1 font-mono text-sm"
+              />
+              <UButton
+                icon="i-iconoir-copy"
+                color="neutral"
+                variant="ghost"
+                aria-label="Copy webhook secret"
+                @click="copyWebhookSecret"
+              />
+            </div>
+          </div>
+          <div class="while-card-inset space-y-2 p-3">
+            <p class="text-xs text-muted">
+              Webhook URL
+            </p>
+            <code class="block break-all font-mono text-xs text-highlighted">
+              {{ webhookUrl || 'Not configured' }}
+            </code>
+            <UBadge
+              :color="webhookSecretConfigured ? 'success' : 'warning'"
+              variant="subtle"
+              class="mt-2"
+            >
+              {{ webhookSecretConfigured ? 'Secret configured' : 'Secret missing' }}
+            </UBadge>
+          </div>
+        </div>
+      </ConnectionsConnectivityFieldBlock>
+    </ConnectionsConnectivityFieldGroup>
+
+    <ConnectionsConnectivityFieldGroup
       title="Key history"
-      description="Past sandbox key creation and revocation events."
+      description="Past sandbox key creation and revocation events for this connection."
     >
       <ConnectionsConnectivityFieldBlock
         v-if="embedded"

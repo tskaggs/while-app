@@ -16,26 +16,46 @@ export function normalizeSandboxApiKey(raw?: string | null): string | null {
 
 export async function resolveSandboxApiKey(
   machineOrgId: string,
-  providedKey?: string | null
+  providedKey?: string | null,
+  connectionId?: string
 ): Promise<string | null> {
-  const pending = getPendingApiKey(machineOrgId)
-  if (pending) return pending
+  if (connectionId) {
+    const connection = await prisma.dashboardConnection.findFirst({
+      where: { id: connectionId, orgId: machineOrgId }
+    })
+    if (connection?.pendingSandboxKey) {
+      const normalized = normalizeSandboxApiKey(providedKey)
+      if (!normalized || normalized === connection.pendingSandboxKey) {
+        storePendingApiKey(`${machineOrgId}:${connectionId}`, connection.pendingSandboxKey)
+        return connection.pendingSandboxKey
+      }
+    }
+  }
+
+  const pendingKey = connectionId
+    ? getPendingApiKey(`${machineOrgId}:${connectionId}`)
+    : getPendingApiKey(machineOrgId)
+  if (pendingKey) return pendingKey
 
   const normalizedKey = normalizeSandboxApiKey(providedKey)
   if (!normalizedKey) {
-    const onboarding = await prisma.orgOnboarding.findUnique({ where: { orgId: machineOrgId } })
-    const storedPending = onboarding?.pendingSandboxKey
-    if (storedPending) {
-      storePendingApiKey(machineOrgId, storedPending)
-      return storedPending
+    if (!connectionId) {
+      const onboarding = await prisma.orgOnboarding.findUnique({ where: { orgId: machineOrgId } })
+      const storedPending = onboarding?.pendingSandboxKey
+      if (storedPending) {
+        storePendingApiKey(machineOrgId, storedPending)
+        return storedPending
+      }
     }
     return null
   }
 
-  const onboarding = await prisma.orgOnboarding.findUnique({ where: { orgId: machineOrgId } })
-  if (onboarding?.pendingSandboxKey === normalizedKey) {
-    storePendingApiKey(machineOrgId, normalizedKey)
-    return normalizedKey
+  if (!connectionId) {
+    const onboarding = await prisma.orgOnboarding.findUnique({ where: { orgId: machineOrgId } })
+    if (onboarding?.pendingSandboxKey === normalizedKey) {
+      storePendingApiKey(machineOrgId, normalizedKey)
+      return normalizedKey
+    }
   }
 
   const hashedKey = hashApiKey(normalizedKey)
@@ -44,12 +64,14 @@ export async function resolveSandboxApiKey(
       orgId: machineOrgId,
       hashedKey,
       environment: 'sandbox',
-      isActive: true
+      isActive: true,
+      ...(connectionId ? { connectionId } : {})
     }
   })
 
   if (!stored) return null
 
-  storePendingApiKey(machineOrgId, normalizedKey)
+  const cacheKey = connectionId ? `${machineOrgId}:${connectionId}` : machineOrgId
+  storePendingApiKey(cacheKey, normalizedKey)
   return normalizedKey
 }

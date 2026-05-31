@@ -1,5 +1,5 @@
 import { requireMachineOrg } from '../../utils/authSession'
-import { defaultPatientId, orgShortId } from '../../utils/provisionOrg'
+import { defaultConnectionId, defaultPatientId, orgShortId } from '../../utils/provisionOrg'
 import { readSandboxApiKeyFromEvent, resolveTestApiKey } from '../../utils/connectionTest'
 import { fetchWhileApi } from '../../utils/whileApiFetch'
 
@@ -7,7 +7,12 @@ export default defineEventHandler(async (event) => {
   const { machineOrgId } = await requireMachineOrg(event)
   const config = useRuntimeConfig()
 
-  const apiKey = await resolveTestApiKey(event, machineOrgId, readSandboxApiKeyFromEvent(event))
+  const apiKey = await resolveTestApiKey(
+    event,
+    machineOrgId,
+    defaultConnectionId(machineOrgId),
+    readSandboxApiKeyFromEvent(event)
+  )
 
   const patientId = defaultPatientId(machineOrgId, 1)
   const apiUrl = config.whileApiUrl || 'http://localhost:8000'

@@ -51,7 +51,7 @@ Every provisioned account gets a **While Sandbox** connection:
 - ID: `conn-sa-{org_short_id}` (matches webhook `connection_id`)
 - Environment: sandbox only — **no live twin**, not deletable
 - Hideable via **Show system sandbox** checkbox on Connections (persisted in `localStorage`)
-- Detail view shows API integration panel instead of topology map
+- Detail view shows topology diagram; system sandbox includes control-plane intro copy
 
 ---
 

@@ -1,6 +1,18 @@
 <script setup lang="ts">
-const { connection, navItems } = useConnectionDetail()
+const route = useRoute()
+const { connection, navItems, connectionId } = useConnectionDetail()
 const { isLiveActivated } = useConnections()
+
+watch(
+  [connection, () => route.path],
+  ([conn, path]) => {
+    if (!conn || path.includes('/provisioning')) return
+    if (conn.provisioningStatus === 'provisioning') {
+      navigateTo(`/connections/${connectionId.value}/provisioning`)
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>

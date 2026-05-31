@@ -1,6 +1,6 @@
 import { createSharedComposable } from '@vueuse/core'
 import { allLiveConnections, allSandboxConnections } from '~/data/connections'
-import type { Connection, TunnelStatus, WhileEnvironment } from '~/types/while'
+import type { Connection, FlightCheck, TunnelStatus, WhileEnvironment } from '~/types/while'
 
 interface DashboardConnectionRecord {
   id: string
@@ -20,10 +20,17 @@ interface DashboardConnectionRecord {
   region?: string
   messagesProcessed24h?: number
   provisioningStatus?: string
+  flightCheck?: FlightCheck
 }
 
 function mapDashboardConnection(record: DashboardConnectionRecord): Connection {
   const isSystem = record.connectionType === 'system_sandbox'
+  const tunnelStatus = (record.tunnelStatus as TunnelStatus) ?? (isSystem ? 'pending' : 'pending')
+  const flightCheck = record.flightCheck ?? {
+    mtu: tunnelStatus === 'active',
+    handshake: isSystem || tunnelStatus === 'active',
+    hl7Ack: isSystem || tunnelStatus === 'active'
+  }
   return {
     id: record.id,
     partnerName: record.name,
@@ -31,11 +38,11 @@ function mapDashboardConnection(record: DashboardConnectionRecord): Connection {
     environment: record.environment as WhileEnvironment,
     pairedConnectionId: record.pairedConnectionId ?? '',
     sidecarId: record.sidecarId ?? (isSystem ? 'while-sandbox' : `sidecar-${record.id.slice(-4)}`),
-    tunnelStatus: (record.tunnelStatus as TunnelStatus) ?? (isSystem ? 'active' : 'pending'),
+    tunnelStatus,
     wireguardPublicKey: record.wireguardPublicKey ?? (isSystem ? 'n/a' : '—'),
     ehrEndpoint: record.ehrEndpoint ?? (isSystem ? 'While Control Plane Sandbox API' : 'https://sandbox.example.test/fhir/R4'),
     lastSyncAt: record.lastSyncAt ?? new Date().toISOString(),
-    flightCheck: { mtu: true, handshake: isSystem || record.tunnelStatus === 'active', hl7Ack: isSystem || record.tunnelStatus === 'active' },
+    flightCheck,
     region: record.region ?? (isSystem ? 'control-plane' : 'us-east-1'),
     messagesProcessed24h: record.messagesProcessed24h ?? 0,
     provisioningStatus: (record.provisioningStatus as Connection['provisioningStatus']) ?? 'active'
@@ -141,7 +148,7 @@ const _useConnections = () => {
   )
 
   function isSystemSandbox(connection: Connection) {
-    return connection.sidecarId === 'while-sandbox'
+    return connection.partnerName === 'While Sandbox' || connection.sidecarId === 'while-sandbox'
   }
 
   return {

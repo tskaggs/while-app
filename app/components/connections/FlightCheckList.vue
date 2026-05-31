@@ -3,6 +3,8 @@ import type { FlightCheck } from '~/types/while'
 
 defineProps<{
   flightCheck: FlightCheck
+  /** When true, pending checks show as in progress instead of failed. */
+  inProgress?: boolean
 }>()
 
 const checks = [
@@ -28,6 +30,12 @@ const checks = [
         class="flex items-start gap-3 rounded-lg border border-default p-3"
       >
         <UIcon
+          v-if="inProgress && !flightCheck[check.key]"
+          name="i-iconoir-refresh-double"
+          class="size-5 shrink-0 mt-0.5 animate-spin text-primary"
+        />
+        <UIcon
+          v-else
           :name="flightCheck[check.key] ? 'i-iconoir-check-circle' : 'i-iconoir-xmark-circle'"
           class="size-5 shrink-0 mt-0.5"
           :class="flightCheck[check.key] ? 'text-success' : 'text-error'"
@@ -37,6 +45,15 @@ const checks = [
           <p class="text-xs text-muted">{{ check.description }}</p>
         </div>
         <UBadge
+          v-if="inProgress && !flightCheck[check.key]"
+          color="primary"
+          variant="subtle"
+          class="ml-auto shrink-0"
+        >
+          Running
+        </UBadge>
+        <UBadge
+          v-else
           :color="flightCheck[check.key] ? 'success' : 'error'"
           variant="subtle"
           class="ml-auto shrink-0"

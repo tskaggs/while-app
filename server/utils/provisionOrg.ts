@@ -7,6 +7,7 @@ import {
   upsertOrgSandboxProfile
 } from './connectionMapping'
 import type { SandboxProfileInput } from './ehrFieldCatalog'
+import { vmIdForConnection } from './vmIds'
 
 const KEY_PREFIX = 'wh_test_'
 const WEBHOOK_PREFIX = 'whsec_'
@@ -228,14 +229,13 @@ export async function provisionOrganization(
         environment: 'sandbox',
         isDeletable: false,
         isHidden: false,
-        sidecarId: sandboxSidecarId(orgId),
-        tunnelStatus: 'active',
+        sidecarId: vmIdForConnection(connectionId, 'sandbox'),
+        tunnelStatus: 'pending',
         wireguardPublicKey: generateWireguardPublicKey(orgId),
         ehrEndpoint: 'While Synthetic Hospital (FHIR R4)',
         ehrVendor: profileInput.ehrVendor ?? 'Other',
         region: 'control-plane',
-        lastSyncAt: new Date(),
-        provisioningStatus: 'active'
+        provisioningStatus: 'provisioning'
       }
     })
 

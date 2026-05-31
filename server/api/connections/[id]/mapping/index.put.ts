@@ -1,4 +1,4 @@
-import { requireMachineOrg } from '../../../../utils/authSession'
+import { requireMachineOrgOrPat } from '../../../../utils/machineAuth'
 import { assertConnectionAccess } from '../../../../utils/connectionTest'
 import { saveConnectionMappings } from '../../../../utils/connectionMapping'
 
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'mappings array is required' })
   }
 
-  const { machineOrgId } = await requireMachineOrg(event)
+  const { machineOrgId } = await requireMachineOrgOrPat(event, ['mapping:write'])
   await assertConnectionAccess(machineOrgId, connectionId)
 
   return saveConnectionMappings(machineOrgId, connectionId, body.mappings)

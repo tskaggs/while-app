@@ -1,7 +1,7 @@
 import { auth } from '../../lib/auth'
 import { requireMachineOrg } from '../../utils/authSession'
 import { provisionOrganization, isOnboardingComplete } from '../../utils/provisionOrg'
-import { provisionAccountSandboxVm } from '../../utils/provisioningWorker'
+import { provisionAccountSandboxVm } from '../../utils/connectionPairs'
 
 export default defineEventHandler(async (event) => {
   const { machineOrgId, authOrgId } = await requireMachineOrg(event)

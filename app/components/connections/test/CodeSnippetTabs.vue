@@ -43,6 +43,6 @@ async function copy(text: string) {
         @click="copy(tab === 'curl' ? curl : typescript)"
       />
     </div>
-    <pre class="text-xs overflow-auto rounded-lg border border-default p-3 bg-muted/30 max-h-64">{{ tab === 'curl' ? curl : typescript }}</pre>
+    <pre class="while-card-inset max-h-64 overflow-auto p-3 text-xs">{{ tab === 'curl' ? curl : typescript }}</pre>
   </div>
 </template>

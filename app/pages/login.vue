@@ -42,7 +42,7 @@ useSeoMeta({ title: 'Sign in' })
 
 <template>
   <div class="min-h-screen flex items-center justify-center p-6 bg-default">
-    <UCard class="w-full max-w-md rounded-xl border border-default bg-elevated">
+    <UCard class="w-full max-w-md while-card overflow-hidden">
       <template #header>
         <div class="space-y-1">
           <h1 class="text-xl font-semibold text-highlighted">

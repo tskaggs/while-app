@@ -15,7 +15,7 @@ const checks = [
 </script>
 
 <template>
-  <UCard>
+  <UCard class="while-card overflow-hidden">
     <template #header>
       <div class="flex items-center gap-2">
         <UIcon name="i-iconoir-airplane" class="size-5 text-primary" />
@@ -27,7 +27,7 @@ const checks = [
       <div
         v-for="check in checks"
         :key="check.key"
-        class="flex items-start gap-3 rounded-lg border border-default p-3"
+        class="while-card-inset flex items-start gap-3 p-3"
       >
         <UIcon
           v-if="inProgress && !flightCheck[check.key]"

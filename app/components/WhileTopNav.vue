@@ -8,11 +8,8 @@ const { data: session } = await authClient.useSession(useFetch)
 const showNav = computed(() => config.public.mockMode || Boolean(session.value))
 
 const navItems: NavigationMenuItem[] = [{
-  label: 'Overview',
-  to: '/'
-}, {
   label: 'Connections',
-  to: '/connections'
+  to: '/'
 }, {
   label: 'Messages',
   to: '/messages'
@@ -37,7 +34,10 @@ const navItems: NavigationMenuItem[] = [{
 <template>
   <header v-if="showNav" class="sticky top-0 z-50 border-b border-default bg-default/80 backdrop-blur-md">
     <div class="flex h-14 items-center gap-4 px-4 lg:px-6">
-      <WhileLogo />
+      <div class="flex items-center gap-3 shrink-0">
+        <WhileLogo />
+        <EnvironmentSwitcher />
+      </div>
 
       <nav class="hidden min-w-0 flex-1 lg:flex lg:justify-center">
         <UNavigationMenu
@@ -56,8 +56,6 @@ const navItems: NavigationMenuItem[] = [{
 
       <div class="ml-auto flex items-center gap-2 shrink-0">
         <UDashboardSearchButton class="hidden sm:flex" />
-        <EnvironmentSwitcher />
-        <TunnelUptimeIndicator />
         <UButton
           icon="i-iconoir-bell"
           color="neutral"

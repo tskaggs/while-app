@@ -58,6 +58,6 @@ watch(
     <h2 class="text-lg font-semibold text-highlighted">
       Connection not found
     </h2>
-    <UButton to="/connections" label="Back to Connections" icon="i-iconoir-arrow-left" />
+    <UButton to="/" label="Back to Connections" icon="i-iconoir-arrow-left" />
   </div>
 </template>

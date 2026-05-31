@@ -152,7 +152,7 @@ function openMessageDetail(message: ReturnType<typeof filterMessages>[number]) {
           </li>
           <li>
             Send a clinical webhook from
-            <NuxtLink :to="`/connections/${connection.id}/test`" class="text-primary hover:underline">
+            <NuxtLink :to="`/connections/${connection.id}/connectivity?section=tests`" class="text-primary hover:underline">
               Test
             </NuxtLink>
             with your webhook URL pointing at while-app's
@@ -163,7 +163,7 @@ function openMessageDetail(message: ReturnType<typeof filterMessages>[number]) {
       </template>
     </UAlert>
 
-    <UCard class="rounded-xl border border-default bg-elevated">
+    <UCard class="while-card overflow-hidden">
       <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end p-1">
         <UInput
           v-model="selectedDate"

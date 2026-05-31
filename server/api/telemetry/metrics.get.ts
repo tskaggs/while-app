@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
       value: connections.filter((c: { tunnelStatus: string }) => c.tunnelStatus === 'active').length,
       variation: 0,
       description: 'Connections with healthy tunnels',
-      to: '/connections'
+      to: '/'
     },
     {
       title: 'FHIR Resources',

@@ -25,8 +25,6 @@ export const useConnectionDetail = () => {
       { label: 'Connectivity', to: `${base}/connectivity` },
       { label: 'Mapping', to: `${base}/mapping` },
       { label: 'Messages', to: `${base}/messages` },
-      { label: 'Test', to: `${base}/test` },
-      { label: 'Credentials', to: `${base}/credentials` },
       { label: 'Logs', to: `${base}/logs` }
     ]
   })

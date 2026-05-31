@@ -2,13 +2,17 @@
 import type { EhrVendor, TunnelStatus } from '~/types/while'
 
 const PAGE_SIZE = 12
+const SPARKLINE_BUCKETS = 12
 
 const { connections } = useConnections()
+const { messages } = useMessages()
+const { chartData } = useUsageMetrics()
 
 const search = ref('')
 const statusFilter = ref<TunnelStatus | undefined>()
 const vendorFilter = ref<EhrVendor | undefined>()
 const page = ref(1)
+const viewMode = useLocalStorage<'cards' | 'table'>('while-overview-connection-view', 'cards')
 
 const statusOptions = [
   { label: 'All statuses', value: undefined },
@@ -51,43 +55,55 @@ watch([search, statusFilter, vendorFilter], () => {
   page.value = 1
 })
 
-function sparklinePoints(seed: string): string {
-  let hash = 0
-  for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash)
-  const points: number[] = []
-  for (let i = 0; i < 12; i++) {
-    hash = (hash * 1103515245 + 12345) & 0x7fffffff
-    points.push(4 + (hash % 20))
+function connectionSparklineValues(connectionId: string): number[] {
+  const now = Date.now()
+  const since24h = now - 86400000
+  const bucketMs = 86400000 / SPARKLINE_BUCKETS
+  const counts = Array.from({ length: SPARKLINE_BUCKETS }, () => 0)
+  let hasRecentMessages = false
+
+  for (const message of messages.value) {
+    if (message.connectionId !== connectionId) continue
+    const timestamp = new Date(message.timestamp).getTime()
+    if (timestamp < since24h) continue
+    hasRecentMessages = true
+    const bucketIndex = Math.min(
+      SPARKLINE_BUCKETS - 1,
+      Math.floor((timestamp - since24h) / bucketMs)
+    )
+    counts[bucketIndex]++
   }
-  const max = Math.max(...points)
-  const min = Math.min(...points)
+
+  if (hasRecentMessages) return counts
+
+  return chartData.value
+    .slice(-SPARKLINE_BUCKETS)
+    .map(point => point.byConnection[connectionId] ?? 0)
+}
+
+function valuesToSparklinePoints(values: number[]): string {
+  if (!values.length) return '0,12 80,12'
+
+  const max = Math.max(...values)
+  const min = Math.min(...values)
   const range = max - min || 1
-  return points
-    .map((y, i) => {
-      const x = (i / (points.length - 1)) * 80
-      const py = 24 - ((y - min) / range) * 20
-      return `${x},${py}`
+
+  return values
+    .map((value, index) => {
+      const x = values.length === 1 ? 40 : (index / (values.length - 1)) * 80
+      const y = 24 - ((value - min) / range) * 20
+      return `${x},${y}`
     })
     .join(' ')
+}
+
+function sparklinePoints(connectionId: string): string {
+  return valuesToSparklinePoints(connectionSparklineValues(connectionId))
 }
 </script>
 
 <template>
   <div>
-    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <h2 class="text-sm font-semibold text-highlighted">
-        Connections
-      </h2>
-      <UButton
-        to="/connections"
-        label="View all"
-        color="neutral"
-        variant="ghost"
-        size="xs"
-        class="self-start sm:self-auto"
-      />
-    </div>
-
     <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
       <UInput
         v-model="search"
@@ -112,49 +128,93 @@ function sparklinePoints(seed: string): string {
       <UBadge color="neutral" variant="subtle" class="shrink-0">
         {{ filtered.length }} connection{{ filtered.length === 1 ? '' : 's' }}
       </UBadge>
+      <UFieldGroup size="sm" class="shrink-0 sm:ml-auto">
+        <UTooltip text="Cards">
+          <UButton
+            icon="i-iconoir-view-grid"
+            color="neutral"
+            :variant="viewMode === 'cards' ? 'subtle' : 'outline'"
+            aria-label="Cards view"
+            @click="viewMode = 'cards'"
+          />
+        </UTooltip>
+        <UTooltip text="Table">
+          <UButton
+            icon="i-iconoir-list"
+            color="neutral"
+            :variant="viewMode === 'table' ? 'subtle' : 'outline'"
+            aria-label="Table view"
+            @click="viewMode = 'table'"
+          />
+        </UTooltip>
+      </UFieldGroup>
     </div>
 
-    <div
-      v-if="paginated.length"
-      class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-    >
-      <NuxtLink
-        v-for="conn in paginated"
-        :key="conn.id"
-        :to="`/connections/${conn.id}`"
-        class="flex flex-col gap-2 rounded-xl border border-default bg-elevated p-3 transition-colors hover:border-primary/40"
+    <template v-if="filtered.length">
+      <div
+        v-if="viewMode === 'cards'"
+        class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       >
-        <div class="flex items-start justify-between gap-2">
-          <div class="min-w-0">
-            <p class="text-sm font-medium text-highlighted truncate">
-              {{ conn.partnerName }}
-            </p>
-            <p class="text-xs text-muted">
-              {{ conn.ehrVendor }} · {{ conn.region }}
-            </p>
-          </div>
-          <ConnectionsConnectionStatusBadge :status="conn.tunnelStatus" />
-        </div>
-        <p class="text-sm font-semibold tabular-nums text-highlighted">
-          {{ conn.messagesProcessed24h.toLocaleString() }}
-          <span class="text-xs font-normal text-muted">msgs/24h</span>
-        </p>
-        <svg
-          viewBox="0 0 80 24"
-          class="h-6 w-full text-primary"
-          aria-hidden="true"
+        <NuxtLink
+          v-for="conn in paginated"
+          :key="conn.id"
+          :to="`/connections/${conn.id}`"
+          class="while-card flex flex-col gap-2 p-3 transition-shadow hover:ring-primary/40"
         >
-          <polyline
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            :points="sparklinePoints(conn.id)"
-          />
-        </svg>
-      </NuxtLink>
-    </div>
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-highlighted truncate">
+                {{ conn.partnerName }}
+              </p>
+              <p class="text-xs text-muted">
+                {{ conn.ehrVendor }} · {{ conn.region }}
+              </p>
+            </div>
+            <ConnectionsConnectionStatusBadge :status="conn.tunnelStatus" />
+          </div>
+          <p class="text-sm font-semibold tabular-nums text-highlighted">
+            {{ conn.messagesProcessed24h.toLocaleString() }}
+            <span class="text-xs font-normal text-muted">msgs/24h</span>
+          </p>
+          <svg
+            viewBox="0 0 80 24"
+            class="h-6 w-full text-primary"
+            aria-hidden="true"
+          >
+            <polyline
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              :points="sparklinePoints(conn.id)"
+            />
+          </svg>
+        </NuxtLink>
+      </div>
+
+      <ConnectionsConnectionTable
+        v-else
+        :connections="paginated"
+      />
+
+      <div
+        v-if="filtered.length > PAGE_SIZE"
+        class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <p class="text-sm text-muted">
+          Showing
+          {{ (page - 1) * PAGE_SIZE + 1 }}–{{ Math.min(page * PAGE_SIZE, filtered.length) }}
+          of {{ filtered.length }}
+        </p>
+        <UPagination
+          v-model:page="page"
+          :total="filtered.length"
+          :items-per-page="PAGE_SIZE"
+          show-edges
+        />
+      </div>
+    </template>
 
     <p
       v-else
@@ -162,22 +222,5 @@ function sparklinePoints(seed: string): string {
     >
       No connections match your search or filters.
     </p>
-
-    <div
-      v-if="filtered.length > PAGE_SIZE"
-      class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <p class="text-sm text-muted">
-        Showing
-        {{ (page - 1) * PAGE_SIZE + 1 }}–{{ Math.min(page * PAGE_SIZE, filtered.length) }}
-        of {{ filtered.length }}
-      </p>
-      <UPagination
-        v-model:page="page"
-        :total="filtered.length"
-        :items-per-page="PAGE_SIZE"
-        show-edges
-      />
-    </div>
   </div>
 </template>

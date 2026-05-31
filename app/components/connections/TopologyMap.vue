@@ -6,6 +6,10 @@ const props = defineProps<{
   connection: Connection
 }>()
 
+const { isSystemSandbox } = useConnections()
+
+const systemSandbox = computed(() => isSystemSandbox(props.connection))
+
 function badgeFromCheck(passed: boolean, pending: boolean): BadgeStatus {
   if (passed) return 'success'
   if (pending) return 'review'
@@ -19,9 +23,17 @@ function statusClause(status: BadgeStatus | LinkStatus): string {
   return ''
 }
 
-const isPending = computed(() => props.connection.tunnelStatus === 'pending')
-const isError = computed(() => props.connection.tunnelStatus === 'error')
-const isActive = computed(() => props.connection.tunnelStatus === 'active')
+const isPending = computed(() =>
+  !systemSandbox.value && props.connection.tunnelStatus === 'pending'
+)
+const isError = computed(() =>
+  !systemSandbox.value && props.connection.tunnelStatus === 'error'
+)
+const isActive = computed(() =>
+  systemSandbox.value
+    ? props.connection.flightCheck.hl7Ack
+    : props.connection.tunnelStatus === 'active'
+)
 
 const secureApiStatus = computed<LinkStatus>(() => {
   if (isError.value) return 'error'
@@ -36,18 +48,36 @@ const wireguardStatus = computed<LinkStatus>(() => {
   return 'review'
 })
 
-const links = computed<TopologyLink[]>(() => [
-  {
-    label: 'Secure API',
-    status: secureApiStatus.value,
-    tooltip: `TLS-terminated REST path from your application to the While sidecar. ${statusClause(secureApiStatus.value)}`
-  },
-  {
-    label: 'WireGuard',
-    status: wireguardStatus.value,
-    tooltip: `Encrypted site-to-site VPN between the While sidecar and the clinic network. ${statusClause(wireguardStatus.value)}`
+const links = computed<TopologyLink[]>(() => {
+  if (systemSandbox.value) {
+    const apiStatus: LinkStatus = props.connection.flightCheck.hl7Ack ? 'success' : 'review'
+    return [
+      {
+        label: 'REST API',
+        status: apiStatus,
+        tooltip: `Bearer-authenticated HTTPS from your app to the While control plane. ${statusClause(apiStatus)}`
+      },
+      {
+        label: 'FHIR R4',
+        status: apiStatus,
+        tooltip: `Synthetic patient and clinical resources from the sandbox catalog. ${statusClause(apiStatus)}`
+      }
+    ]
   }
-])
+
+  return [
+    {
+      label: 'Secure API',
+      status: secureApiStatus.value,
+      tooltip: `TLS-terminated REST path from your application to the While sidecar. ${statusClause(secureApiStatus.value)}`
+    },
+    {
+      label: 'WireGuard',
+      status: wireguardStatus.value,
+      tooltip: `Encrypted site-to-site VPN between the While sidecar and the clinic network. ${statusClause(wireguardStatus.value)}`
+    }
+  ]
+})
 
 const nodes = computed<TopologyNode[]>(() => {
   const { connection } = props
@@ -73,6 +103,113 @@ const nodes = computed<TopologyNode[]>(() => {
         : 'error'
 
   const clinicReachLabel = isActive.value ? 'Up' : pending ? 'Review' : 'Down'
+
+  if (systemSandbox.value) {
+    const ready = connection.flightCheck.hl7Ack
+    const apiStatus: BadgeStatus = ready ? 'success' : 'review'
+    return [
+      {
+        id: 'app',
+        title: 'Your App',
+        subtitle: 'Integration client',
+        icon: 'i-iconoir-smartphone-device',
+        badges: [
+          {
+            icon: 'i-iconoir-cube',
+            label: 'REST',
+            status: apiStatus,
+            tooltip: `HTTPS REST calls to While sandbox APIs. ${statusClause(apiStatus)}`
+          },
+          {
+            icon: 'i-iconoir-flash',
+            label: msg,
+            status: 'neutral',
+            tooltip: `Webhook and API events processed in the last 24 hours (${msg} total).`
+          },
+          {
+            icon: 'i-iconoir-check-circle',
+            label: ready ? 'Ready' : 'Setup',
+            status: apiStatus,
+            tooltip: ready
+              ? 'Mapping and credentials are configured for sandbox API calls.'
+              : 'Complete mapping and credentials before relying on sandbox responses.'
+          },
+          {
+            icon: 'i-iconoir-activity',
+            label: 'sandbox',
+            status: 'neutral',
+            tooltip: 'System sandbox — synthetic FHIR data on the control plane; no live twin.'
+          }
+        ]
+      },
+      {
+        id: 'sidecar',
+        title: 'While Control Plane',
+        subtitle: connection.sidecarId,
+        icon: 'i-iconoir-server',
+        badges: [
+          {
+            icon: 'i-iconoir-cube',
+            label: 'API',
+            status: apiStatus,
+            tooltip: `Sandbox catalog, patient reads, and webhook triggers. ${statusClause(apiStatus)}`
+          },
+          {
+            icon: 'i-iconoir-rocket',
+            label: 'FHIR',
+            status: apiStatus,
+            tooltip: `Synthetic FHIR R4 resources scoped to your organization. ${statusClause(apiStatus)}`
+          },
+          {
+            icon: 'i-iconoir-check-circle',
+            label: 'Catalog',
+            status: apiStatus,
+            tooltip: `Field mappings and sandbox profile ${ready ? 'ready' : 'in progress'}. ${statusClause(apiStatus)}`
+          },
+          {
+            icon: 'i-iconoir-flash',
+            label: msg,
+            status: ready ? 'success' : 'neutral',
+            tooltip: `Events routed through the control plane in the last 24 hours (${msg}).`
+          }
+        ]
+      },
+      {
+        id: 'clinic',
+        title: connection.partnerName,
+        subtitle: connection.ehrEndpoint,
+        icon: 'i-iconoir-hospital',
+        badges: [
+          {
+            icon: 'i-iconoir-cube',
+            label: 'Synth',
+            status: 'neutral',
+            tooltip: 'Synthetic clinic data — not a real EHR endpoint.'
+          },
+          {
+            icon: 'i-iconoir-rocket',
+            label: 'FHIR',
+            status: apiStatus,
+            tooltip: `Synthetic FHIR R4 patient and observation data. ${statusClause(apiStatus)}`
+          },
+          {
+            icon: 'i-iconoir-check-circle',
+            label: ready ? 'Active' : 'Pending',
+            status: apiStatus,
+            tooltip: ready
+              ? 'Sandbox clinic responses are available for integration testing.'
+              : 'Finish mapping setup to unlock full sandbox catalog responses.'
+          },
+          {
+            icon: 'i-iconoir-flash',
+            label: connection.ehrVendor.slice(0, 3),
+            status: 'neutral',
+            tooltip: `Origin EHR profile for default mappings: ${connection.ehrVendor}.`
+          }
+        ]
+      }
+    ]
+  }
 
   return [
     {
@@ -186,7 +323,26 @@ function linkAt(index: number): TopologyLink {
   return links.value[index]!
 }
 
+const platformLayerLabel = computed(() =>
+  systemSandbox.value ? 'Control plane' : 'While platform'
+)
+const endpointLayerLabel = computed(() =>
+  systemSandbox.value ? 'Synthetic clinic' : 'Clinic network'
+)
+const secondLinkVariant = computed(() =>
+  systemSandbox.value ? 'api' as const : 'vpn' as const
+)
+
 const alertMeta = computed(() => {
+  if (systemSandbox.value) {
+    if (props.connection.flightCheck.hl7Ack) return null
+    return {
+      color: 'warning' as const,
+      icon: 'i-iconoir-clock',
+      title: 'Sandbox setup in progress',
+      description: 'Complete field mappings on the Mapping tab to unlock the full sandbox catalog.'
+    }
+  }
   if (isActive.value) return null
   if (isPending.value) {
     return {
@@ -207,13 +363,14 @@ const alertMeta = computed(() => {
 
 <template>
   <UCard
+    class="while-card overflow-hidden"
     :ui="{
       root: 'overflow-hidden',
       body: 'p-0'
     }"
   >
     <UAlert
-      v-if="connection.provisioningStatus === 'provisioning'"
+      v-if="!systemSandbox && connection.provisioningStatus === 'provisioning'"
       color="info"
       variant="subtle"
       class="m-4 mb-0"
@@ -259,19 +416,19 @@ const alertMeta = computed(() => {
         />
         <ConnectionsTopologyIsometricNode
           :node="nodes[1]!"
-          layer-label="While platform"
+          :layer-label="platformLayerLabel"
           icon-type="server"
-          :active="!isError"
+          :active="systemSandbox ? isActive : !isError"
         />
         <ConnectionsTopologyIsometricConnector
           :label="linkAt(1).label"
           :status="linkAt(1).status"
           :tooltip="linkAt(1).tooltip"
-          variant="vpn"
+          :variant="secondLinkVariant"
         />
         <ConnectionsTopologyIsometricNode
           :node="nodes[2]!"
-          layer-label="Clinic network"
+          :layer-label="endpointLayerLabel"
           icon-type="clinic"
           :active="isActive && connection.flightCheck.hl7Ack"
         />
@@ -294,20 +451,20 @@ const alertMeta = computed(() => {
         />
         <ConnectionsTopologyIsometricNode
           :node="nodes[1]!"
-          layer-label="While platform"
+          :layer-label="platformLayerLabel"
           icon-type="server"
-          :active="!isError"
+          :active="systemSandbox ? isActive : !isError"
         />
         <ConnectionsTopologyIsometricConnector
           :label="linkAt(1).label"
           :status="linkAt(1).status"
           :tooltip="linkAt(1).tooltip"
-          variant="vpn"
+          :variant="secondLinkVariant"
           vertical
         />
         <ConnectionsTopologyIsometricNode
           :node="nodes[2]!"
-          layer-label="Clinic network"
+          :layer-label="endpointLayerLabel"
           icon-type="clinic"
           :active="isActive && connection.flightCheck.hl7Ack"
         />

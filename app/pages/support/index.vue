@@ -141,7 +141,7 @@ const newRequestItems = [
       </template>
     </PageHeader>
 
-    <div class="flex min-h-[32rem] flex-col overflow-hidden rounded-xl border border-default bg-elevated lg:flex-row">
+    <div class="while-card flex min-h-[32rem] flex-col overflow-hidden lg:flex-row">
       <aside class="flex w-full flex-col border-b border-default lg:w-96 lg:shrink-0 lg:border-b-0 lg:border-r">
         <SupportInboxList
           :items="filteredItems"

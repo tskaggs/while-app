@@ -2,13 +2,9 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const links: NavigationMenuItem[] = [{
-  label: 'Overview',
-  icon: 'i-iconoir-dashboard',
-  to: '/'
-}, {
   label: 'Connections',
   icon: 'i-iconoir-network',
-  to: '/connections'
+  to: '/'
 }, {
   label: 'Messages',
   icon: 'i-iconoir-activity',

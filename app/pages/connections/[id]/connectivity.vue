@@ -5,5 +5,5 @@ useConnectionPageMeta('Connectivity')
 </script>
 
 <template>
-  <ConnectionsConnectivityPanel v-if="connection" :connection="connection" />
+  <ConnectionsConnectivityHub v-if="connection" :connection="connection" />
 </template>

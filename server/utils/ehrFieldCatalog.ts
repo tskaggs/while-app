@@ -60,4 +60,29 @@ export function computeMappingCompletion(
   }
 }
 
+export function buildMappingApiPayload(
+  connectionId: string,
+  profile: { ehrVendor?: string | null, dataFormat?: string | null, resourceTypes?: unknown } | null,
+  mappings: Array<{
+    sourcePath: string
+    targetFhirPath: string
+    status: string
+    isRequired: boolean
+  }>
+) {
+  const resourceTypes = profile?.resourceTypes
+  return {
+    connection_id: connectionId,
+    ehr_vendor: profile?.ehrVendor ?? 'Other',
+    data_format: profile?.dataFormat ?? 'fhir',
+    resource_types: Array.isArray(resourceTypes) ? resourceTypes : ['Patient'],
+    field_mappings: mappings.map(m => ({
+      source_path: m.sourcePath,
+      target_fhir_path: m.targetFhirPath,
+      status: m.status,
+      is_required: m.isRequired
+    }))
+  }
+}
+
 export const catalogVersion = catalog.version

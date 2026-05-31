@@ -271,7 +271,7 @@ async function sendTestWebhook() {
 </script>
 
 <template>
-  <UCard class="rounded-xl border border-default bg-elevated">
+  <UCard class="while-card overflow-hidden">
     <template #header>
       <h3 class="font-semibold text-highlighted">
         Webhooks
@@ -302,7 +302,7 @@ async function sendTestWebhook() {
     </ol>
 
     <div class="space-y-4">
-      <div class="rounded-lg border border-default p-4 space-y-3">
+      <div class="while-card-inset space-y-3 p-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p class="text-sm font-medium text-highlighted">
@@ -470,7 +470,7 @@ async function sendTestWebhook() {
         </div>
         <pre
           v-if="verifyTab === 'verify'"
-          class="text-xs overflow-auto rounded-lg border border-default p-3 bg-muted/30 max-h-64"
+          class="while-card-inset max-h-64 overflow-auto p-3 text-xs"
         >{{ webhookVerifySnippet }}</pre>
         <ConnectionsTestCodeSnippetTabs
           v-else
@@ -479,7 +479,7 @@ async function sendTestWebhook() {
         />
       </div>
 
-      <div v-if="enableTriggerTest !== false" class="rounded-lg border border-default p-4 space-y-3">
+      <div v-if="enableTriggerTest !== false" class="while-card-inset space-y-3 p-4">
         <p class="text-sm font-medium text-highlighted">
           Send test webhook
         </p>
@@ -514,7 +514,7 @@ async function sendTestWebhook() {
                 {{ webhookStatus }}
               </UBadge>
             </div>
-            <pre class="text-xs overflow-auto rounded-lg border border-default p-3 bg-muted/30 max-h-40">{{ JSON.stringify(webhookResult.trigger, null, 2) }}</pre>
+            <pre class="while-card-inset max-h-40 overflow-auto p-3 text-xs">{{ JSON.stringify(webhookResult.trigger, null, 2) }}</pre>
           </div>
 
           <div v-if="webhookResult.delivery" class="space-y-2">
@@ -545,7 +545,7 @@ async function sendTestWebhook() {
             <p class="text-sm font-medium text-highlighted mb-2">
               Recent delivery (while-app ingest)
             </p>
-            <pre class="text-xs overflow-auto rounded-lg border border-default p-3 bg-muted/30 max-h-40">{{ JSON.stringify(webhookResult.received[0], null, 2) }}</pre>
+            <pre class="while-card-inset max-h-40 overflow-auto p-3 text-xs">{{ JSON.stringify(webhookResult.received[0], null, 2) }}</pre>
           </div>
           <UAlert
             v-if="webhookResult.delivery?.success && webhookResult.received.length && !webhookResult.message"
@@ -554,7 +554,7 @@ async function sendTestWebhook() {
             title="Ingest OK but no Messages row"
             description="Webhook delivery reached while-app, but no clinical processed message was created. Use a clinical event such as patient.admitted — tunnel-only events appear under Logs, not Messages."
           />
-          <div v-if="webhookResult.message" class="rounded-lg border border-default p-3 space-y-1">
+          <div v-if="webhookResult.message" class="while-card-inset space-y-1 p-3">
             <p class="text-sm font-medium text-highlighted">
               Latest processed message
             </p>

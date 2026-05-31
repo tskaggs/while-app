@@ -4,6 +4,7 @@ import {
   computeMappingCompletion,
   defaultMappingsFromCatalog,
   getCatalogFields,
+  buildMappingApiPayload,
   type SandboxProfileInput
 } from './ehrFieldCatalog'
 
@@ -56,16 +57,26 @@ export async function getConnectionMappingBundle(orgId: string, connectionId: st
 
   const ehrVendor = profile?.ehrVendor ?? 'Other'
   const dataFormat = profile?.dataFormat ?? 'fhir'
-  const suggestions = getCatalogFields(ehrVendor, dataFormat).filter(
+  const catalog = getCatalogFields(ehrVendor, dataFormat)
+  const suggestions = catalog.filter(
     field => !mappings.some(m => m.sourcePath === field.sourcePath)
   )
+
+  const mappingRows = mappings.map(m => ({
+    sourcePath: m.sourcePath,
+    targetFhirPath: m.targetFhirPath,
+    status: m.status,
+    isRequired: m.isRequired
+  }))
 
   return {
     profile,
     mappings,
     requiredData,
+    catalog,
     suggestions,
-    completion: computeMappingCompletion(mappings)
+    completion: computeMappingCompletion(mappings),
+    apiPayload: buildMappingApiPayload(connectionId, profile, mappingRows)
   }
 }
 

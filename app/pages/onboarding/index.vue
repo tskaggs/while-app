@@ -560,7 +560,7 @@ useSeoMeta({ title: 'Onboarding' })
       <UAlert v-if="error" color="error" variant="subtle" :title="error" />
 
       <!-- Step 1 -->
-      <UCard v-if="step === 1 && !provisioningActive" class="rounded-xl border border-default bg-elevated">
+      <UCard v-if="step === 1 && !provisioningActive" class="while-card overflow-hidden">
         <template #header>
           <h2 class="font-semibold text-highlighted">
             Step 1 — Organization
@@ -618,7 +618,7 @@ useSeoMeta({ title: 'Onboarding' })
       <!-- Provisioning build -->
       <UCard
         v-if="provisioningActive && provisionConnection"
-        class="rounded-xl border border-default bg-elevated"
+        class="while-card overflow-hidden"
       >
         <template #header>
           <h2 class="font-semibold text-highlighted">
@@ -641,7 +641,7 @@ useSeoMeta({ title: 'Onboarding' })
       </UCard>
 
       <!-- Step 2 -->
-      <UCard v-if="step === 2 && provision" class="rounded-xl border border-default bg-elevated">
+      <UCard v-if="step === 2 && provision" class="while-card overflow-hidden">
         <template #header>
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -754,7 +754,7 @@ useSeoMeta({ title: 'Onboarding' })
       </UCard>
 
       <!-- Step 3 -->
-      <UCard v-if="step === 3" class="rounded-xl border border-default bg-elevated">
+      <UCard v-if="step === 3" class="while-card overflow-hidden">
         <template #header>
           <h2 class="font-semibold text-highlighted">
             Step 3 — Try the API
@@ -769,7 +769,7 @@ useSeoMeta({ title: 'Onboarding' })
       </UCard>
 
       <!-- Step 4 -->
-      <UCard v-if="step === 4 && provision" class="rounded-xl border border-default bg-elevated">
+      <UCard v-if="step === 4 && provision" class="while-card overflow-hidden">
         <template #header>
           <h2 class="font-semibold text-highlighted">
             Step 4 — Code snippets &amp; webhook test
@@ -831,7 +831,7 @@ useSeoMeta({ title: 'Onboarding' })
       </UCard>
 
       <!-- Step 5 -->
-      <UCard v-if="step === 5" class="rounded-xl border border-default bg-elevated">
+      <UCard v-if="step === 5" class="while-card overflow-hidden">
         <template #header>
           <h2 class="font-semibold text-highlighted">
             Step 5 — Invite your team (optional)

@@ -21,7 +21,7 @@ const methodColor = computed(() => (props.method === 'GET' ? 'info' : 'warning')
 </script>
 
 <template>
-  <UCard class="rounded-xl border border-default bg-elevated">
+  <UCard class="while-card overflow-hidden">
     <template #header>
       <div class="flex flex-wrap items-start gap-3">
         <UBadge :color="methodColor" variant="subtle" class="font-mono shrink-0">
@@ -69,7 +69,7 @@ const methodColor = computed(() => (props.method === 'GET' ? 'info' : 'warning')
           {{ status }}
         </UBadge>
       </div>
-      <pre class="text-xs overflow-auto rounded-lg border border-default p-3 bg-muted/30 max-h-80">{{ JSON.stringify(response, null, 2) }}</pre>
+      <pre class="while-card-inset max-h-80 overflow-auto p-3 text-xs">{{ JSON.stringify(response, null, 2) }}</pre>
     </div>
   </UCard>
 </template>

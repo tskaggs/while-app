@@ -97,6 +97,23 @@ html.dark .while-logo-line {
   background-color: var(--color-while-500);
 }
 
+/* Theme-aware card surfaces */
+.while-card {
+  @apply rounded-xl bg-default ring ring-default;
+}
+
+.while-card-inset {
+  @apply rounded-lg bg-elevated ring ring-default;
+}
+
+.while-card-muted {
+  @apply bg-accented ring ring-default;
+}
+
+.while-card-intro {
+  @apply ring-primary/25;
+}
+
 /* Primary buttons — light mode accent */
 html:not(.dark) button[data-color="primary"]:not(:disabled),
 html:not(.dark) a[data-color="primary"] {

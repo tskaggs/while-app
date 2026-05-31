@@ -39,14 +39,23 @@ const webhookSourceLabel = computed(() => {
 
 <template>
   <div v-if="connection" class="space-y-6">
-    <ConnectionsSystemSandboxPanel
+    <p
       v-if="isSystemSandbox(connection)"
-      :connection="connection"
-    />
-    <ConnectionsTopologyMap v-else :connection="connection" />
+      class="text-sm text-muted"
+    >
+      Synthetic FHIR clinic data via the control plane. No live version — use this connection to build and test integrations. Webhook URL and secret are configured under
+      <NuxtLink to="/settings" class="text-primary hover:underline">
+        Settings
+      </NuxtLink>
+      — see
+      <NuxtLink to="/docs/webhooks" class="text-primary hover:underline">
+        Webhooks
+      </NuxtLink>.
+    </p>
+    <ConnectionsTopologyMap :connection="connection" />
 
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <UCard class="lg:col-span-2 rounded-xl border border-default bg-elevated">
+      <UCard class="while-card lg:col-span-2 overflow-hidden">
         <template #header>
           <h3 class="font-semibold text-highlighted">
             Integration Details
@@ -102,10 +111,10 @@ const webhookSourceLabel = computed(() => {
                 {{ webhookSourceLabel }}
               </UBadge>
               <NuxtLink
-                :to="`/connections/${connection.id}/test`"
+                :to="`/connections/${connection.id}/connectivity?section=tests`"
                 class="text-xs text-primary hover:underline"
               >
-                Configure on Test
+                Configure in Connectivity
               </NuxtLink>
             </dd>
           </div>

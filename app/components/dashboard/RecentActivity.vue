@@ -19,14 +19,14 @@ function formatDate(date: string) {
 
 <template>
   <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-    <UCard class="rounded-xl border border-default bg-elevated">
+    <UCard class="while-card overflow-hidden">
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="font-semibold text-highlighted">
             Connection health
           </h3>
           <UButton
-            to="/connections"
+            to="/"
             label="View all"
             color="neutral"
             variant="ghost"
@@ -59,7 +59,7 @@ function formatDate(date: string) {
       </div>
     </UCard>
 
-    <UCard class="rounded-xl border border-default bg-elevated">
+    <UCard class="while-card overflow-hidden">
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="font-semibold text-highlighted">

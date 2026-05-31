@@ -93,7 +93,7 @@ const planLabel = computed(() => {
     <PageHeader title="Settings" />
 
     <div class="max-w-2xl space-y-6">
-      <UCard class="rounded-xl border border-default bg-elevated">
+      <UCard class="while-card overflow-hidden">
         <template #header>
           <h3 class="font-semibold text-highlighted">
             Appearance
@@ -107,7 +107,7 @@ const planLabel = computed(() => {
         </UFormField>
       </UCard>
 
-      <UCard class="rounded-xl border border-default bg-elevated">
+      <UCard class="while-card overflow-hidden">
         <template #header>
           <h3 class="font-semibold text-highlighted">
             Organization
@@ -123,7 +123,7 @@ const planLabel = computed(() => {
         </div>
       </UCard>
 
-      <UCard class="rounded-xl border border-default bg-elevated">
+      <UCard class="while-card overflow-hidden">
         <template #header>
           <h3 class="font-semibold text-highlighted">
             API Keys
@@ -166,7 +166,7 @@ const planLabel = computed(() => {
         </div>
       </UCard>
 
-      <UCard class="rounded-xl border border-default bg-elevated">
+      <UCard class="while-card overflow-hidden">
         <template #header>
           <h3 class="font-semibold text-highlighted">
             Default webhook destination
@@ -184,7 +184,7 @@ const planLabel = computed(() => {
           </UButton>
           <p class="text-xs text-muted">
             Per-connection overrides and secret rotation are on each connection's
-            <NuxtLink to="/connections" class="text-primary hover:underline">
+            <NuxtLink to="/" class="text-primary hover:underline">
               Test
             </NuxtLink>
             tab.
@@ -195,7 +195,7 @@ const planLabel = computed(() => {
         </div>
       </UCard>
 
-      <UCard v-if="!config.public.mockMode" class="rounded-xl border border-default bg-elevated">
+      <UCard v-if="!config.public.mockMode" class="while-card overflow-hidden">
         <template #header>
           <h3 class="font-semibold text-highlighted">
             Team

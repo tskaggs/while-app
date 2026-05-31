@@ -132,7 +132,7 @@ const blockedList = computed(() =>
             size="sm"
           />
           <UButton
-            to="/connections"
+            to="/"
             label="View connections"
             color="neutral"
             variant="outline"

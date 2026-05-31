@@ -1,5 +1,8 @@
 import { prisma } from '../lib/prisma'
 import {
+  credentialsApiKeySelect
+} from './connectionCredentialsTypes'
+import {
   defaultConnectionId,
   generateSandboxApiKey,
   generateWebhookSecret
@@ -14,6 +17,23 @@ export interface ConnectionCredentialsResult {
 export async function loadOrgDefaultWebhookUrl(orgId: string): Promise<string | null> {
   const settings = await prisma.sandboxSettings.findUnique({ where: { orgId } })
   return settings?.webhookUrl ?? null
+}
+
+export async function loadSandboxApiKeysForConnection(orgId: string, connectionId: string) {
+  return prisma.apiKey.findMany({
+    where: {
+      orgId,
+      environment: 'sandbox',
+      connection: {
+        is: {
+          id: connectionId,
+          orgId
+        }
+      }
+    },
+    select: credentialsApiKeySelect,
+    orderBy: { createdAt: 'desc' }
+  })
 }
 
 /** Create sandbox API key + webhook secret for a connection; returns plaintext once. */

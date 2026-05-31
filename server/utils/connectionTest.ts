@@ -19,7 +19,7 @@ export async function assertConnectionAccess(machineOrgId: string, connectionId:
 
 export function isSystemSandboxConnection(connection: {
   connectionType: string
-  sidecarId: string | null
+  sidecarId?: string | null
 }) {
   return connection.connectionType === 'system_sandbox'
     || connection.sidecarId === 'while-sandbox'

@@ -12,7 +12,12 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<{ event?: string, patient_id?: string, apiKey?: string }>(event)
   const providedKey = body?.apiKey ?? readSandboxApiKeyFromEvent(event)
 
-  const apiKey = await resolveTestApiKey(event, machineOrgId, providedKey)
+  const apiKey = await resolveTestApiKey(
+    event,
+    machineOrgId,
+    defaultConnectionId(machineOrgId),
+    providedKey
+  )
 
   const patientId = body?.patient_id ?? defaultPatientId(machineOrgId, 1)
   const webhookEvent = body?.event ?? 'patient.admitted'

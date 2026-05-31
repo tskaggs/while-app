@@ -1,6 +1,7 @@
 import { requireMachineOrg } from '../../../../utils/authSession'
 import {
   assertConnectionAccess,
+  isSandboxTestConnection,
   isSystemSandboxConnection,
   resolveTestApiKey
 } from '../../../../utils/connectionTest'
@@ -33,19 +34,22 @@ export default defineEventHandler(async (event) => {
   const { machineOrgId } = await requireMachineOrg(event)
   const connection = await assertConnectionAccess(machineOrgId, connectionId)
 
-  if (!isSystemSandboxConnection(connection)) {
+  if (!isSandboxTestConnection(connection)) {
     throw createError({
       statusCode: 403,
-      message: 'Catalog tests are only available for the While Sandbox connection.'
+      message: 'Catalog tests are only available for sandbox connections.'
     })
   }
 
-  const apiKey = await resolveTestApiKey(event, machineOrgId)
+  const apiKey = await resolveTestApiKey(event, machineOrgId, connectionId)
   const apiUrl = config.whileApiUrl || 'http://localhost:8000'
 
-  const res = await fetchWhileApi(`${apiUrl}/v1/sandbox/catalog`, {
-    headers: { Authorization: `Bearer ${apiKey}` }
-  })
+  const res = await fetchWhileApi(
+    `${apiUrl}/v1/sandbox/catalog?connection_id=${encodeURIComponent(connectionId)}`,
+    {
+      headers: { Authorization: `Bearer ${apiKey}` }
+    }
+  )
 
   const body = res.ok ? await res.json() : await res.text()
 

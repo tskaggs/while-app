@@ -25,6 +25,10 @@ export function isSystemSandboxConnection(connection: {
     || connection.sidecarId === 'while-sandbox'
 }
 
+export function isSandboxTestConnection(connection: { environment: string }) {
+  return connection.environment === 'sandbox'
+}
+
 export function readSandboxApiKeyFromEvent(event: H3Event, overrideKey?: string | null) {
   if (overrideKey) {
     return overrideKey
@@ -48,17 +52,18 @@ export function readSandboxApiKeyFromEvent(event: H3Event, overrideKey?: string 
 export async function resolveTestApiKey(
   event: H3Event,
   machineOrgId: string,
+  connectionId?: string,
   overrideKey?: string | null
 ) {
   const providedKey = readSandboxApiKeyFromEvent(event, overrideKey)
   const hasProvidedKey = Boolean(normalizeSandboxApiKey(providedKey))
-  const apiKey = await resolveSandboxApiKey(machineOrgId, providedKey)
+  const apiKey = await resolveSandboxApiKey(machineOrgId, providedKey, connectionId)
 
   if (!apiKey) {
     throw createError({
       statusCode: 400,
       message: hasProvidedKey
-        ? `Sandbox API key not recognized for this organization. Paste the full ${KEY_PREFIX}* key from onboarding and confirm it matches your org key prefix.`
+        ? `Sandbox API key not recognized for this connection. Paste the full ${KEY_PREFIX}* key from this connection's Credential tab.`
         : 'Sandbox API key required. Paste your wh_test_* key in the Test view (session only).'
     })
   }

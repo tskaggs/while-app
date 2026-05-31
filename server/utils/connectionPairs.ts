@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { prisma } from '../lib/prisma'
 import { defaultConnectionId, generateWireguardPublicKey, orgShortId } from './provisionOrg'
+import { provisionConnectionSandboxCredentials } from './connectionCredentials'
 import { seedConnectionMappings } from './connectionMapping'
 import { enqueueProvisioningJob } from './provisioningWorker'
 import { vmIdForConnection } from './vmIds'
@@ -18,6 +19,11 @@ export interface ConnectionPairInput {
 export interface ConnectionPairResult {
   sandboxConnectionId: string
   liveConnectionId: string
+  credentials?: {
+    sandboxApiKey: string
+    webhookSecret: string
+    webhookUrl: string | null
+  } | null
 }
 
 function pairSuffix(orgId: string) {
@@ -28,6 +34,8 @@ export async function createConnectionPair(input: ConnectionPairInput): Promise<
   const suffix = pairSuffix(input.orgId)
   const sandboxConnectionId = `conn-sa-${suffix}`
   const liveConnectionId = `conn-li-${suffix}`
+
+  let credentials: ConnectionPairResult['credentials'] = null
 
   await prisma.$transaction(async (tx) => {
     await tx.dashboardConnection.create({
@@ -69,6 +77,12 @@ export async function createConnectionPair(input: ConnectionPairInput): Promise<
         provisioningStatus: 'ready'
       }
     })
+
+    credentials = await provisionConnectionSandboxCredentials(
+      input.orgId,
+      sandboxConnectionId,
+      tx
+    )
   })
 
   await seedConnectionMappings(input.orgId, sandboxConnectionId, {
@@ -85,7 +99,7 @@ export async function createConnectionPair(input: ConnectionPairInput): Promise<
 
   await enqueueProvisioningJob(input.orgId, sandboxConnectionId, 'partner_connection', 'sandbox')
 
-  return { sandboxConnectionId, liveConnectionId }
+  return { sandboxConnectionId, liveConnectionId, credentials }
 }
 
 export async function createPartnerConnectionFromRequest(requestId: string) {

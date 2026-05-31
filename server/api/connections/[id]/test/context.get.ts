@@ -51,7 +51,12 @@ export default defineEventHandler(async (event) => {
 
   const [keys, webhookConfig] = await Promise.all([
     prisma.apiKey.findFirst({
-      where: { orgId: machineOrgId, environment: 'sandbox', isActive: true },
+      where: {
+        orgId: machineOrgId,
+        connectionId: connection.id,
+        environment: 'sandbox',
+        isActive: true
+      },
       orderBy: { createdAt: 'desc' }
     }),
     loadConnectionWebhookConfig(machineOrgId, connectionId)

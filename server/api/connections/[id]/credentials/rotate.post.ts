@@ -3,9 +3,9 @@ import { prisma } from '../../../../lib/prisma'
 import { buildApiKeyHistoryEvents } from '../../../../utils/apiKeyHistory'
 import {
   assertConnectionAccess,
-  isSystemSandboxConnection
+  isSandboxTestConnection
 } from '../../../../utils/connectionTest'
-import { rotateOrgSandboxApiKey } from '../../../../utils/provisionOrg'
+import { rotateConnectionSandboxApiKey } from '../../../../utils/connectionCredentials'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -33,17 +33,7 @@ export default defineEventHandler(async (event) => {
           environment: 'sandbox',
           occurredAt: now,
           isActive: true
-        },
-        ...[
-          {
-            id: 'mock-key-2-revoked',
-            type: 'revoked' as const,
-            keyPrefix: 'wh_test_',
-            environment: 'sandbox',
-            occurredAt: now,
-            isActive: false
-          }
-        ]
+        }
       ]
     }
   }
@@ -51,17 +41,17 @@ export default defineEventHandler(async (event) => {
   const { machineOrgId } = await requireMachineOrg(event)
   const connection = await assertConnectionAccess(machineOrgId, connectionId)
 
-  if (!isSystemSandboxConnection(connection)) {
+  if (!isSandboxTestConnection(connection)) {
     throw createError({
       statusCode: 403,
-      message: 'Sandbox API keys can only be rotated from the While Sandbox connection.'
+      message: 'Sandbox API keys can only be rotated on sandbox connections.'
     })
   }
 
-  const sandboxApiKey = await rotateOrgSandboxApiKey(machineOrgId)
+  const sandboxApiKey = await rotateConnectionSandboxApiKey(machineOrgId, connectionId)
 
   const keys = await prisma.apiKey.findMany({
-    where: { orgId: machineOrgId, environment: 'sandbox' },
+    where: { orgId: machineOrgId, connectionId, environment: 'sandbox' },
     orderBy: { createdAt: 'desc' }
   })
 

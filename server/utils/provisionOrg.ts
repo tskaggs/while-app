@@ -8,6 +8,7 @@ import {
 } from './connectionMapping'
 import type { SandboxProfileInput } from './ehrFieldCatalog'
 import { vmIdForConnection } from './vmIds'
+import { backfillSystemSandboxKeyBinding } from './connectionCredentials'
 
 const KEY_PREFIX = 'wh_test_'
 const WEBHOOK_PREFIX = 'whsec_'
@@ -97,19 +98,20 @@ async function loadPendingSandboxKey(orgId: string): Promise<string | null> {
   return null
 }
 
-async function rotateSandboxApiKey(orgId: string) {
+async function rotateSandboxApiKey(orgId: string, connectionId: string) {
   const { rawKey, hashedKey } = generateSandboxApiKey()
   const revokedAt = new Date()
 
   await prisma.$transaction(async (tx) => {
     await tx.apiKey.updateMany({
-      where: { orgId, environment: 'sandbox', isActive: true },
+      where: { orgId, connectionId, environment: 'sandbox', isActive: true },
       data: { isActive: false, revokedAt }
     })
 
     await tx.apiKey.create({
       data: {
         orgId,
+        connectionId,
         hashedKey,
         keyPrefix: KEY_PREFIX,
         environment: 'sandbox',
@@ -122,9 +124,9 @@ async function rotateSandboxApiKey(orgId: string) {
   return rawKey
 }
 
-/** Rotate the org sandbox API key; returns plaintext once. */
+/** Rotate the system sandbox API key; returns plaintext once. */
 export async function rotateOrgSandboxApiKey(orgId: string) {
-  return rotateSandboxApiKey(orgId)
+  return rotateSandboxApiKey(orgId, defaultConnectionId(orgId))
 }
 
 /** Return pending sandbox key, or rotate a new one while onboarding is incomplete. */
@@ -139,7 +141,7 @@ export async function resolveOnboardingSandboxKey(orgId: string) {
     return { sandboxApiKey: '', keyRegenerated: false }
   }
 
-  const sandboxApiKey = await rotateSandboxApiKey(orgId)
+  const sandboxApiKey = await rotateSandboxApiKey(orgId, defaultConnectionId(orgId))
   return { sandboxApiKey, keyRegenerated: true }
 }
 
@@ -171,6 +173,7 @@ export async function provisionOrganization(
     }
 
     const { sandboxApiKey, keyRegenerated } = await resolveOnboardingSandboxKey(orgId)
+    await backfillSystemSandboxKeyBinding(orgId)
     const profile = existing.sandboxProfile ?? await upsertOrgSandboxProfile(orgId, profileInput)
     return {
       orgId,
@@ -201,16 +204,6 @@ export async function provisionOrganization(
       }
     })
 
-    await tx.apiKey.create({
-      data: {
-        orgId,
-        hashedKey,
-        keyPrefix: KEY_PREFIX,
-        environment: 'sandbox',
-        isActive: true
-      }
-    })
-
     await tx.sandboxSettings.create({
       data: {
         orgId,
@@ -235,7 +228,20 @@ export async function provisionOrganization(
         ehrEndpoint: 'While Synthetic Hospital (FHIR R4)',
         ehrVendor: profileInput.ehrVendor ?? 'Other',
         region: 'control-plane',
-        provisioningStatus: 'provisioning'
+        provisioningStatus: 'provisioning',
+        webhookUrl,
+        webhookSecret
+      }
+    })
+
+    await tx.apiKey.create({
+      data: {
+        orgId,
+        connectionId,
+        hashedKey,
+        keyPrefix: KEY_PREFIX,
+        environment: 'sandbox',
+        isActive: true
       }
     })
 
@@ -265,9 +271,14 @@ export async function provisionOrganization(
   }
 }
 
-export async function getSandboxApiKey(orgId: string) {
+export async function getSandboxApiKey(orgId: string, connectionId?: string) {
   const key = await prisma.apiKey.findFirst({
-    where: { orgId, environment: 'sandbox', isActive: true }
+    where: {
+      orgId,
+      environment: 'sandbox',
+      isActive: true,
+      ...(connectionId ? { connectionId } : {})
+    }
   })
   if (!key) return null
   return key

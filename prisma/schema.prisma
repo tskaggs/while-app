@@ -145,17 +145,20 @@ model MachineOrganization {
 }
 
 model ApiKey {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orgId       String   @map("org_id") @db.Uuid
-  hashedKey   String   @unique @map("hashed_key") @db.Char(64)
-  keyPrefix   String   @map("key_prefix") @db.VarChar(12)
-  environment String   @db.VarChar(10)
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
-  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId        String   @map("org_id") @db.Uuid
+  connectionId String?  @map("connection_id")
+  hashedKey    String   @unique @map("hashed_key") @db.Char(64)
+  keyPrefix    String   @map("key_prefix") @db.VarChar(12)
+  environment  String   @db.VarChar(10)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
 
   organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  connection   DashboardConnection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
+  @@index([orgId, connectionId, environment])
   @@map("api_keys")
 }
 
@@ -195,6 +198,8 @@ model DashboardConnection {
   messagesProcessed24h Int       @default(0) @map("messages_processed_24h")
   webhookUrl           String?   @map("webhook_url")
   webhookSecret        String?   @map("webhook_secret")
+  pendingSandboxKey    String?   @map("pending_sandbox_key")
+  pendingWebhookSecret String?   @map("pending_webhook_secret")
   provisioningStatus   String    @default("active") @map("provisioning_status")
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
@@ -203,6 +208,7 @@ model DashboardConnection {
   requiredData    ConnectionRequiredData?
   wireguardPeer    ConnectionWireguardPeer?
   provisioningJobs ProvisioningJob[]
+  apiKeys         ApiKey[]
 
   @@map("dashboard_connections")
 }

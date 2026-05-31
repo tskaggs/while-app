@@ -1,9 +1,9 @@
-import { requireMachineOrg } from '../../utils/authSession'
+import { requireMachineOrgOrPat } from '../../utils/machineAuth'
 import { prisma } from '../../lib/prisma'
-import { createPartnerConnectionFromRequest } from '../../utils/provisioningWorker'
+import { createPartnerConnectionFromRequest } from '../../utils/connectionPairs'
 
 export default defineEventHandler(async (event) => {
-  const { machineOrgId } = await requireMachineOrg(event)
+  const { machineOrgId } = await requireMachineOrgOrPat(event, ['connections:provision'])
   const body = await readBody<{
     partnerName: string
     ehrVendor: string

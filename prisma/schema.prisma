@@ -134,6 +134,7 @@ model MachineOrganization {
   dashboardConnections DashboardConnection[]
   connectionRequests   ConnectionRequest[]
   orgOnboarding        OrgOnboarding?
+  machineApiTokens     MachineApiToken[]
   processedMessages    ProcessedMessage[]
   integrationLogs      IntegrationLog[]
   tunnelLogs           TunnelLog[]
@@ -200,8 +201,8 @@ model DashboardConnection {
   organization    MachineOrganization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   fieldMappings   ConnectionFieldMapping[]
   requiredData    ConnectionRequiredData?
-  wireguardPeer   ConnectionWireguardPeer?
-  provisioningJob ProvisioningJob?
+  wireguardPeer    ConnectionWireguardPeer?
+  provisioningJobs ProvisioningJob[]
 
   @@map("dashboard_connections")
 }
@@ -282,9 +283,11 @@ model ConnectionRequest {
 model ConnectionWireguardPeer {
   connectionId  String   @id @map("connection_id")
   orgId         String   @map("org_id") @db.Uuid
+  environment   String   @default("sandbox")
   publicKey     String   @map("public_key")
   privateKeyRef String?  @map("private_key_ref")
   endpoint      String?
+  listenPort    Int?     @map("listen_port")
   allowedIps    String   @default("10.8.0.0/24") @map("allowed_ips")
   peerConfig    Json     @default("{}") @map("peer_config")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -296,22 +299,46 @@ model ConnectionWireguardPeer {
 }
 
 model ProvisioningJob {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orgId        String    @map("org_id") @db.Uuid
-  connectionId String    @unique @map("connection_id")
-  jobType      String    @map("job_type")
-  status       String    @default("queued")
-  vmId         String?   @map("vm_id")
-  errorMessage String?   @map("error_message")
-  startedAt    DateTime? @map("started_at") @db.Timestamptz
-  completedAt  DateTime? @map("completed_at") @db.Timestamptz
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId           String    @map("org_id") @db.Uuid
+  connectionId    String    @map("connection_id")
+  environment     String    @default("sandbox")
+  jobType         String    @map("job_type")
+  status          String    @default("queued")
+  stage           String    @default("queued")
+  vmId            String?   @map("vm_id")
+  orchestratorVmId String?  @map("orchestrator_vm_id")
+  progressPercent Int       @default(0) @map("progress_percent")
+  errorMessage    String?   @map("error_message")
+  startedAt       DateTime? @map("started_at") @db.Timestamptz
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   connection DashboardConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
+  @@unique([connectionId, environment])
   @@index([orgId, status])
+  @@index([status, stage])
   @@map("provisioning_jobs")
+}
+
+model MachineApiToken {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId       String    @map("org_id") @db.Uuid
+  name        String
+  tokenHash   String    @unique @map("token_hash") @db.Char(64)
+  tokenPrefix String    @map("token_prefix") @db.VarChar(12)
+  scopes      String[]  @default([])
+  expiresAt   DateTime? @map("expires_at") @db.Timestamptz
+  lastUsedAt  DateTime? @map("last_used_at") @db.Timestamptz
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  organization MachineOrganization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("machine_api_tokens")
 }
 
 model ProcessedMessage {

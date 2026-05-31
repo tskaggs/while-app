@@ -42,7 +42,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return
   }
 
-  if (to.path !== '/onboarding') {
+  if (to.path !== '/onboarding' && !to.path.match(/^\/connections\/[^/]+\/provisioning$/)) {
     return navigateTo({ path: '/onboarding', query: { redirect: to.fullPath } })
   }
 })

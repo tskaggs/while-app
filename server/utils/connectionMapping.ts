@@ -97,6 +97,15 @@ export async function saveConnectionMappings(
     }
   })
 
+  const connection = await prisma.dashboardConnection.findUnique({ where: { id: connectionId } })
+  if (connection?.pairedConnectionId) {
+    const bundle = await getConnectionMappingBundle(orgId, connectionId)
+    if (bundle.completion.complete) {
+      const { maybeEnqueueLiveVm } = await import('./provisioningWorker')
+      await maybeEnqueueLiveVm(orgId, connection.pairedConnectionId)
+    }
+  }
+
   return getConnectionMappingBundle(orgId, connectionId)
 }
 
@@ -138,17 +147,70 @@ export async function saveConnectionRequiredData(
     })
   }
 
+  const connection = await prisma.dashboardConnection.findUnique({ where: { id: connectionId } })
+  if (connection?.pairedConnectionId && input.markComplete) {
+    const { maybeEnqueueLiveVm } = await import('./provisioningWorker')
+    await maybeEnqueueLiveVm(orgId, connection.pairedConnectionId)
+  }
+
   return data
 }
 
 export function deriveFlightCheckFromMapping(
   tunnelStatus: string,
   completion: ReturnType<typeof computeMappingCompletion>,
-  requiredDataComplete: boolean
+  requiredDataComplete: boolean,
+  connectionType?: string
 ) {
+  const isSystemSandbox = connectionType === 'system_sandbox'
+  const requiredOk = isSystemSandbox || requiredDataComplete
   return {
     mtu: tunnelStatus === 'active',
     handshake: tunnelStatus === 'active' || tunnelStatus === 'pending',
-    hl7Ack: completion.complete && requiredDataComplete
+    hl7Ack: completion.complete && requiredOk
+  }
+}
+
+const PROVISIONING_STAGE_ORDER = [
+  'queued',
+  'vm_create',
+  'wireguard',
+  'sidecar_boot',
+  'health_check',
+  'completed'
+] as const
+
+/** Stage-aware flight checks while a VM job is still running. */
+export function deriveFlightCheckFromProvisioning(
+  stage: string | undefined,
+  tunnelStatus: string,
+  completion: ReturnType<typeof computeMappingCompletion>,
+  requiredDataComplete: boolean,
+  connectionType?: string
+) {
+  if (
+    tunnelStatus === 'active'
+    || stage === 'completed'
+    || !stage
+  ) {
+    return deriveFlightCheckFromMapping(
+      tunnelStatus,
+      completion,
+      requiredDataComplete,
+      connectionType
+    )
+  }
+
+  const stageIndex = PROVISIONING_STAGE_ORDER.indexOf(stage as typeof PROVISIONING_STAGE_ORDER[number])
+  const isSystemSandbox = connectionType === 'system_sandbox'
+  const requiredOk = isSystemSandbox || requiredDataComplete
+
+  return {
+    mtu: stageIndex >= PROVISIONING_STAGE_ORDER.indexOf('sidecar_boot'),
+    handshake: stageIndex >= PROVISIONING_STAGE_ORDER.indexOf('wireguard'),
+    hl7Ack:
+      stageIndex >= PROVISIONING_STAGE_ORDER.indexOf('health_check')
+      && completion.complete
+      && requiredOk
   }
 }

@@ -25,6 +25,8 @@ export default defineNuxtConfig({
     betterAuthSecret: process.env.BETTER_AUTH_SECRET || '',
     betterAuthUrl: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
     webhookBaseUrl: process.env.WHILE_WEBHOOK_BASE_URL || '',
+    orchestratorUrl: process.env.ORCHESTRATOR_URL || 'http://localhost:8090',
+    orchestratorSecret: process.env.ORCHESTRATOR_SECRET || '',
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       whileApiUrl: process.env.NUXT_PUBLIC_WHILE_API_URL || process.env.WHILE_API_URL || 'http://localhost:8000',

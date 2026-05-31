@@ -1,8 +1,8 @@
-import { requireMachineOrg } from '../../utils/authSession'
+import { requireMachineOrgOrPat } from '../../utils/machineAuth'
 import { upsertOrgSandboxProfile } from '../../utils/connectionMapping'
 
 export default defineEventHandler(async (event) => {
-  const { machineOrgId } = await requireMachineOrg(event)
+  const { machineOrgId } = await requireMachineOrgOrPat(event, ['mapping:write'])
   const body = await readBody<{
     ehrVendor?: string
     dataFormat?: string

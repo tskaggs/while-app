@@ -1,4 +1,4 @@
-import { requireMachineOrg } from '../../../../utils/authSession'
+import { requireMachineOrgOrPat } from '../../../../utils/machineAuth'
 import { assertConnectionAccess } from '../../../../utils/connectionTest'
 import { getConnectionMappingBundle } from '../../../../utils/connectionMapping'
 
@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Connection id is required' })
   }
 
-  const { machineOrgId } = await requireMachineOrg(event)
+  const { machineOrgId } = await requireMachineOrgOrPat(event, ['mapping:read'])
   await assertConnectionAccess(machineOrgId, connectionId)
 
   return getConnectionMappingBundle(machineOrgId, connectionId)

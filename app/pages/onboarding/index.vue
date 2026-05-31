@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { authClient } from '~/lib/auth-client'
+import type { Connection, FlightCheck } from '~/types/while'
 
 definePageMeta({ layout: 'auth' })
 
@@ -38,6 +39,15 @@ const webhookResult = ref<{
 } | null>(null)
 const snippetTab = ref('curl')
 
+const provisioningActive = ref(false)
+const provisionStage = ref('queued')
+const provisionProgress = ref(0)
+const provisionFlightCheck = ref<FlightCheck>({ mtu: false, handshake: false, hl7Ack: false })
+const provisioningStatus = ref<'provisioning' | 'active' | 'pending_customer' | 'error'>('provisioning')
+
+let provisioningPoll: ReturnType<typeof setInterval> | null = null
+let provisioningStream: EventSource | null = null
+
 const { refreshMessages } = useMessages()
 
 const inviteEmail = ref('')
@@ -54,6 +64,109 @@ const sandboxApiKeyDisplay = computed(() => {
   if (sandboxApiKeyValue.value) return sandboxApiKeyValue.value
   if (loadingKey.value) return 'Loading sandbox API key…'
   return 'Sandbox API key unavailable — generate a new key below'
+})
+
+const provisionConnection = computed((): Connection | null => {
+  if (!provision.value) return null
+  return {
+    id: provision.value.connectionId,
+    partnerName: provision.value.orgName,
+    ehrVendor: ehrVendor.value,
+    environment: 'sandbox',
+    pairedConnectionId: '',
+    sidecarId: `fc-sa-${provision.value.connectionId.replace(/^conn-sa-/, '')}`,
+    tunnelStatus: provisioningStatus.value === 'active' ? 'active' : 'pending',
+    wireguardPublicKey: '—',
+    ehrEndpoint: 'While Synthetic Hospital (FHIR R4)',
+    lastSyncAt: new Date().toISOString(),
+    flightCheck: provisionFlightCheck.value,
+    region: 'control-plane',
+    messagesProcessed24h: 0,
+    provisioningStatus: provisioningStatus.value
+  }
+})
+
+const provisioningBuildComplete = computed(() =>
+  ['active', 'pending_customer'].includes(provisioningStatus.value)
+  && provisionStage.value === 'completed'
+)
+
+function stopProvisioningMonitor() {
+  if (provisioningPoll) {
+    clearInterval(provisioningPoll)
+    provisioningPoll = null
+  }
+  provisioningStream?.close()
+  provisioningStream = null
+}
+
+async function loadProvisioningState(connectionId: string) {
+  try {
+    const data = await $fetch<{
+      connection: { provisioningStatus: string }
+      jobs: Array<{ stage: string, progressPercent: number, status: string }>
+      flightCheck: FlightCheck
+    }>(`/api/connections/${connectionId}/provisioning`)
+
+    provisioningStatus.value = data.connection.provisioningStatus as typeof provisioningStatus.value
+    provisionFlightCheck.value = data.flightCheck
+    const activeJob = data.jobs.find(j => j.status === 'running' || j.status === 'queued')
+      ?? data.jobs[data.jobs.length - 1]
+    if (activeJob) {
+      provisionStage.value = activeJob.stage
+      provisionProgress.value = activeJob.progressPercent
+    }
+    if (['active', 'pending_customer'].includes(data.connection.provisioningStatus)) {
+      provisionStage.value = 'completed'
+      provisionProgress.value = 100
+    }
+  } catch {
+    // polling will retry
+  }
+}
+
+function startProvisioningMonitor(connectionId: string) {
+  stopProvisioningMonitor()
+  provisioningActive.value = true
+  void loadProvisioningState(connectionId)
+
+  if (import.meta.client) {
+    provisioningStream = new EventSource(
+      `/api/provisioning/stream?connectionId=${encodeURIComponent(connectionId)}`
+    )
+    provisioningStream.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data)
+        if (payload.type === 'provisioning') {
+          if (payload.stage) provisionStage.value = payload.stage
+          if (payload.progressPercent !== undefined) {
+            provisionProgress.value = payload.progressPercent
+          }
+          if (payload.provisioningStatus) {
+            provisioningStatus.value = payload.provisioningStatus
+          }
+          if (payload.stage === 'completed') {
+            provisionProgress.value = 100
+            void loadProvisioningState(connectionId)
+          }
+        }
+      } catch {
+        // ignore malformed events
+      }
+    }
+    provisioningPoll = setInterval(() => loadProvisioningState(connectionId), 4000)
+  }
+}
+
+function continueFromProvisioning() {
+  if (!provisioningBuildComplete.value) return
+  stopProvisioningMonitor()
+  provisioningActive.value = false
+  step.value = 2
+}
+
+watch(provisioningBuildComplete, (done) => {
+  if (done) stopProvisioningMonitor()
 })
 
 type ProvisionPayload = {
@@ -224,7 +337,27 @@ async function runProvision() {
 
     applyProvisionResult(result)
     resumeSetup.value = result.alreadyProvisioned
-    step.value = 2
+    if (import.meta.client) {
+      sessionStorage.setItem('while-onboarding-provision', JSON.stringify(result))
+    }
+
+    if (result.alreadyProvisioned) {
+      try {
+        const state = await $fetch<{ connection: { provisioningStatus: string } }>(
+          `/api/connections/${result.connectionId}/provisioning`
+        )
+        if (state.connection.provisioningStatus === 'provisioning') {
+          startProvisioningMonitor(result.connectionId)
+        } else {
+          step.value = 2
+        }
+      } catch {
+        step.value = 2
+      }
+      return
+    }
+
+    startProvisioningMonitor(result.connectionId)
   } catch (e: unknown) {
     const fetchError = e as { data?: { message?: string }, message?: string }
     error.value = fetchError.data?.message ?? fetchError.message ?? 'Provisioning failed'
@@ -358,14 +491,45 @@ onMounted(async () => {
     return
   }
 
+  const routeStep = Number(route.query.step)
+  if (routeStep >= 2 && routeStep <= 5) {
+    step.value = routeStep
+  }
+
+  if (import.meta.client) {
+    const stored = sessionStorage.getItem('while-onboarding-provision')
+    if (stored) {
+      try {
+        applyProvisionResult(JSON.parse(stored) as ProvisionPayload)
+      } catch {
+        // ignore invalid stored payload
+      }
+    }
+  }
+
   try {
     const restored = await refreshCredentials()
-    if (restored) {
-      step.value = 2
+    if (restored && provision.value && step.value === 1) {
+      try {
+        const state = await $fetch<{ connection: { provisioningStatus: string } }>(
+          `/api/connections/${provision.value.connectionId}/provisioning`
+        )
+        if (state.connection.provisioningStatus === 'provisioning') {
+          startProvisioningMonitor(provision.value.connectionId)
+        } else {
+          step.value = 2
+        }
+      } catch {
+        step.value = 2
+      }
     }
   } finally {
     statusReady.value = true
   }
+})
+
+onUnmounted(() => {
+  stopProvisioningMonitor()
 })
 
 watch(step, (nextStep) => {
@@ -396,7 +560,7 @@ useSeoMeta({ title: 'Onboarding' })
       <UAlert v-if="error" color="error" variant="subtle" :title="error" />
 
       <!-- Step 1 -->
-      <UCard v-if="step === 1" class="rounded-xl border border-default bg-elevated">
+      <UCard v-if="step === 1 && !provisioningActive" class="rounded-xl border border-default bg-elevated">
         <template #header>
           <h2 class="font-semibold text-highlighted">
             Step 1 — Organization
@@ -449,6 +613,31 @@ useSeoMeta({ title: 'Onboarding' })
         <UButton :loading="loading" @click="runProvision">
           {{ resumeSetup ? 'Continue setup' : 'Set up sandbox' }}
         </UButton>
+      </UCard>
+
+      <!-- Provisioning build -->
+      <UCard
+        v-if="provisioningActive && provisionConnection"
+        class="rounded-xl border border-default bg-elevated"
+      >
+        <template #header>
+          <h2 class="font-semibold text-highlighted">
+            Building your sandbox
+          </h2>
+        </template>
+        <ConnectionsProvisioningCanvas
+          :connection="provisionConnection"
+          :stage="provisionStage"
+          :progress-percent="provisionProgress"
+        />
+        <div class="flex justify-end pt-2">
+          <UButton
+            :disabled="!provisioningBuildComplete"
+            @click="continueFromProvisioning"
+          >
+            Continue
+          </UButton>
+        </div>
       </UCard>
 
       <!-- Step 2 -->

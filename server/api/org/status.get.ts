@@ -1,8 +1,8 @@
-import { requireMachineOrg } from '../../utils/authSession'
+import { requireMachineOrgOrPat } from '../../utils/machineAuth'
 import { prisma } from '../../lib/prisma'
 
 export default defineEventHandler(async (event) => {
-  const { machineOrgId } = await requireMachineOrg(event)
+  const { machineOrgId } = await requireMachineOrgOrPat(event, ['connections:read'])
 
   const [onboarding, org, keys, settings, connections] = await Promise.all([
     prisma.orgOnboarding.findUnique({ where: { orgId: machineOrgId } }),

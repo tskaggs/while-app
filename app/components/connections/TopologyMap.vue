@@ -182,30 +182,8 @@ const nodes = computed<TopologyNode[]>(() => {
   ]
 })
 
-const linkStatusStyles: Record<LinkStatus, { line: string, dot: string, pill: string }> = {
-  success: {
-    line: 'bg-success/50',
-    dot: 'bg-success ring-success/30',
-    pill: 'border-success/40 bg-success/5 text-success'
-  },
-  error: {
-    line: 'bg-error/50',
-    dot: 'bg-error ring-error/30',
-    pill: 'border-error/40 bg-error/5 text-error'
-  },
-  review: {
-    line: 'bg-warning/50',
-    dot: 'bg-warning ring-warning/30',
-    pill: 'border-warning/40 bg-warning/5 text-warning'
-  }
-}
-
 function linkAt(index: number): TopologyLink {
   return links.value[index]!
-}
-
-function linkStyle(index: number) {
-  return linkStatusStyles[linkAt(index).status]
 }
 
 const alertMeta = computed(() => {
@@ -261,157 +239,78 @@ const alertMeta = computed(() => {
         tabs.
       </template>
     </UAlert>
-    <div
-      class="topology-canvas relative px-4 py-8 sm:px-6 sm:py-10"
-    >
-      <!-- Desktop: horizontal flow -->
-      <div class="hidden lg:flex lg:items-stretch lg:gap-0">
-        <template
-          v-for="(node, index) in nodes"
-          :key="node.id"
-        >
-          <div class="topology-node flex min-w-0 flex-1 flex-col">
-            <div
-              class="flex h-full flex-col rounded-xl border border-default bg-elevated shadow-sm"
-            >
-              <div class="flex items-start gap-3 border-b border-default px-4 py-3.5">
-                <div
-                  class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-default bg-accented/60"
-                >
-                  <UIcon :name="node.icon" class="size-5 text-muted" />
-                </div>
-                <div class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-semibold text-highlighted">
-                    {{ node.title }}
-                  </p>
-                  <p class="truncate text-xs text-muted">
-                    {{ node.subtitle }}
-                  </p>
-                </div>
-                <UIcon
-                  name="i-iconoir-drag-hand-gesture"
-                  class="size-4 shrink-0 text-dimmed"
-                />
-              </div>
-              <div class="flex flex-wrap gap-2 px-4 py-3">
-                <ConnectionsTopologyBadgePill
-                  v-for="(badge, badgeIndex) in node.badges"
-                  :key="badgeIndex"
-                  v-bind="badge"
-                />
-              </div>
-            </div>
-          </div>
+    <div class="topology-canvas relative overflow-hidden px-3 py-8 sm:px-6 sm:py-10">
+      <!-- Isometric grid -->
+      <div class="topology-iso-grid pointer-events-none absolute inset-0" aria-hidden="true" />
 
-          <div
-            v-if="index < links.length"
-            class="topology-connector flex w-[min(11rem,14vw)] shrink-0 flex-col justify-center px-1"
-          >
-            <div class="flex items-center">
-              <div
-                class="h-px min-w-3 flex-1"
-                :class="linkStyle(index).line"
-              />
-              <span
-                class="mx-0.5 size-2 shrink-0 rounded-full ring-2 ring-bg"
-                :class="linkStyle(index).dot"
-              />
-              <UTooltip
-                :text="linkAt(index).tooltip"
-                :content="{ side: 'top', sideOffset: 6 }"
-              >
-                <span
-                  tabindex="0"
-                  class="shrink-0 cursor-help rounded-full border px-2.5 py-1 text-[11px] font-medium whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                  :class="linkStyle(index).pill"
-                >
-                  {{ linkAt(index).label }}
-                </span>
-              </UTooltip>
-              <span
-                class="mx-0.5 size-2 shrink-0 rounded-full ring-2 ring-bg"
-                :class="linkStyle(index).dot"
-              />
-              <div
-                class="h-px min-w-3 flex-1"
-                :class="linkStyle(index).line"
-              />
-            </div>
-          </div>
-        </template>
+      <!-- Desktop: layered isometric flow -->
+      <div class="relative hidden lg:flex lg:items-start lg:gap-0">
+        <ConnectionsTopologyIsometricNode
+          :node="nodes[0]!"
+          layer-label="Client layer"
+          icon-type="device"
+          :active="isActive || isPending"
+        />
+        <ConnectionsTopologyIsometricConnector
+          :label="linkAt(0).label"
+          :status="linkAt(0).status"
+          :tooltip="linkAt(0).tooltip"
+          variant="api"
+        />
+        <ConnectionsTopologyIsometricNode
+          :node="nodes[1]!"
+          layer-label="While platform"
+          icon-type="server"
+          :active="!isError"
+        />
+        <ConnectionsTopologyIsometricConnector
+          :label="linkAt(1).label"
+          :status="linkAt(1).status"
+          :tooltip="linkAt(1).tooltip"
+          variant="vpn"
+        />
+        <ConnectionsTopologyIsometricNode
+          :node="nodes[2]!"
+          layer-label="Clinic network"
+          icon-type="clinic"
+          :active="isActive && connection.flightCheck.hl7Ack"
+        />
       </div>
 
-      <!-- Mobile / tablet: vertical flow -->
-      <div class="flex flex-col gap-0 lg:hidden">
-        <template
-          v-for="(node, index) in nodes"
-          :key="`${node.id}-mobile`"
-        >
-          <div
-            class="flex flex-col rounded-xl border border-default bg-elevated shadow-sm"
-          >
-            <div class="flex items-start gap-3 border-b border-default px-4 py-3.5">
-              <div
-                class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-default bg-accented/60"
-              >
-                <UIcon :name="node.icon" class="size-5 text-muted" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-semibold text-highlighted">
-                  {{ node.title }}
-                </p>
-                <p class="truncate text-xs text-muted">
-                  {{ node.subtitle }}
-                </p>
-              </div>
-              <UIcon
-                name="i-iconoir-drag-hand-gesture"
-                class="size-4 shrink-0 text-dimmed"
-              />
-            </div>
-            <div class="flex flex-wrap gap-2 px-4 py-3">
-              <ConnectionsTopologyBadgePill
-                v-for="(badge, badgeIndex) in node.badges"
-                :key="badgeIndex"
-                v-bind="badge"
-              />
-            </div>
-          </div>
-
-          <div
-            v-if="index < links.length"
-            class="flex flex-col items-center py-3"
-          >
-            <div
-              class="w-px flex-1 min-h-4"
-              :class="linkStyle(index).line"
-            />
-            <span
-              class="my-1 size-2 shrink-0 rounded-full ring-2 ring-bg"
-              :class="linkStyle(index).dot"
-            />
-            <UTooltip
-              :text="linkAt(index).tooltip"
-              :content="{ side: 'top', sideOffset: 6 }"
-            >
-              <span
-                tabindex="0"
-                class="cursor-help rounded-full border px-2.5 py-1 text-[11px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                :class="linkStyle(index).pill"
-              >
-                {{ linkAt(index).label }}
-              </span>
-            </UTooltip>
-            <span
-              class="my-1 size-2 shrink-0 rounded-full ring-2 ring-bg"
-              :class="linkStyle(index).dot"
-            />
-            <div
-              class="w-px flex-1 min-h-4"
-              :class="linkStyle(index).line"
-            />
-          </div>
-        </template>
+      <!-- Mobile / tablet: vertical isometric stack -->
+      <div class="relative flex flex-col items-stretch gap-0 lg:hidden">
+        <ConnectionsTopologyIsometricNode
+          :node="nodes[0]!"
+          layer-label="Client layer"
+          icon-type="device"
+          :active="isActive || isPending"
+        />
+        <ConnectionsTopologyIsometricConnector
+          :label="linkAt(0).label"
+          :status="linkAt(0).status"
+          :tooltip="linkAt(0).tooltip"
+          variant="api"
+          vertical
+        />
+        <ConnectionsTopologyIsometricNode
+          :node="nodes[1]!"
+          layer-label="While platform"
+          icon-type="server"
+          :active="!isError"
+        />
+        <ConnectionsTopologyIsometricConnector
+          :label="linkAt(1).label"
+          :status="linkAt(1).status"
+          :tooltip="linkAt(1).tooltip"
+          variant="vpn"
+          vertical
+        />
+        <ConnectionsTopologyIsometricNode
+          :node="nodes[2]!"
+          layer-label="Clinic network"
+          icon-type="clinic"
+          :active="isActive && connection.flightCheck.hl7Ack"
+        />
       </div>
 
       <!-- Legend -->
@@ -447,24 +346,48 @@ const alertMeta = computed(() => {
 
 <style scoped>
 .topology-canvas {
+  --topo-accent: var(--color-while-500);
+  --topo-accent-soft: var(--color-while-300);
+  --topo-face-top: var(--color-while-400);
+  --topo-face-top-end: var(--color-while-500);
+  --topo-face-left: var(--color-while-600);
+  --topo-face-left-end: var(--color-while-800);
+  --topo-face-right: var(--color-while-500);
+  --topo-face-right-end: var(--color-while-700);
+  --topo-plinth: var(--ui-bg-accented);
+  --topo-plinth-edge: var(--ui-border);
+  --topo-screen: var(--ui-bg-elevated);
+  --topo-screen-edge: color-mix(in srgb, var(--color-while-500) 35%, var(--ui-border));
+  --topo-shadow: var(--color-while-900);
+  --topo-wire-fill: color-mix(in srgb, var(--color-while-500) 4%, transparent);
+  --topo-wire-edge: color-mix(in srgb, var(--color-while-500) 28%, var(--ui-border));
+  --topo-wire-highlight: var(--color-while-400);
+
   background-color: var(--ui-bg);
-  background-image: radial-gradient(circle, var(--ui-border) 1px, transparent 1px);
-  background-size: 16px 16px;
+}
+
+.topology-iso-grid {
+  background-image:
+    linear-gradient(150deg, transparent 24.5%, color-mix(in srgb, var(--ui-border) 65%, transparent) 25%, color-mix(in srgb, var(--ui-border) 65%, transparent) 25.5%, transparent 26%),
+    linear-gradient(30deg, transparent 24.5%, color-mix(in srgb, var(--ui-border) 65%, transparent) 25%, color-mix(in srgb, var(--ui-border) 65%, transparent) 25.5%, transparent 26%);
+  background-size: 28px 48px;
+  background-position: center top;
+  opacity: 0.55;
+  mask-image: radial-gradient(ellipse 90% 85% at 50% 45%, black 30%, transparent 100%);
 }
 
 html.dark .topology-canvas {
-  background-image: radial-gradient(circle, rgb(255 255 255 / 0.06) 1px, transparent 1px);
+  --topo-face-top: var(--color-while-500);
+  --topo-face-top-end: var(--color-while-600);
+  --topo-face-left: var(--color-while-700);
+  --topo-face-left-end: var(--color-while-950);
+  --topo-face-right: var(--color-while-600);
+  --topo-face-right-end: var(--color-while-800);
+  --topo-wire-fill: color-mix(in srgb, var(--color-while-400) 8%, transparent);
+  --topo-wire-edge: color-mix(in srgb, var(--color-while-400) 35%, var(--ui-border));
 }
 
-.topology-node {
-  position: relative;
-  z-index: 1;
-}
-
-.topology-connector {
-  position: relative;
-  z-index: 0;
-  align-self: center;
-  min-height: 5.5rem;
+html.dark .topology-iso-grid {
+  opacity: 0.35;
 }
 </style>
